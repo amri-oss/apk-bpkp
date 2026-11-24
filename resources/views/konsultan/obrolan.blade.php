@@ -8,12 +8,15 @@
         $fotoUrl = fn ($u) => $u->foto_profil ? asset('storage/' . $u->foto_profil) : null;
     @endphp
 
-    <div class="py-3 px-3 sm:px-6 lg:px-8 flex-1 flex flex-col min-h-0 h-[calc(100vh-175px)] min-h-[580px] max-w-7xl mx-auto w-full">
-        <div class="chat-panel bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden flex flex-1 min-h-0 h-full w-full">
+    <div class="py-3 px-3 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full flex-1 flex flex-col min-h-0" style="height: calc(100vh - 165px); min-height: 560px;">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-1 min-h-0 w-full h-full" style="height: 100%;">
 
             {{-- Kolom kiri: daftar obrolan --}}
-            <div class="w-full sm:w-80 shrink-0 min-h-0 border-r border-gray-200 flex flex-col bg-white {{ $selected ? 'hidden sm:flex' : 'flex' }}">
-                <div class="p-3.5 border-b border-gray-100">
+            <div class="border-r border-gray-200 flex flex-col bg-white shrink-0 {{ $selected ? 'hidden sm:flex' : 'flex' }}"
+                 style="width: 320px; min-width: 320px; max-width: 320px; height: 100%;">
+
+                {{-- Kotak Pencarian --}}
+                <div class="p-3.5 border-b border-gray-100 shrink-0">
                     <div class="relative">
                         <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -25,7 +28,8 @@
                     </div>
                 </div>
 
-                <div class="flex-1 overflow-y-auto divide-y divide-gray-50" id="daftar-obrolan">
+                {{-- List Obrolan --}}
+                <div class="flex-1 overflow-y-auto divide-y divide-gray-100" id="daftar-obrolan" style="flex: 1 1 0%; min-height: 0;">
                     @forelse ($konsultasis as $k)
                         @php
                             $fotoAudiens = $fotoUrl($k->audiens);
@@ -33,34 +37,38 @@
                             $pesanTerakhir = $k->pesans->last();
                         @endphp
                         <a href="{{ route('konsultan.obrolan', $k->id) }}"
-                            class="konsultasi-item flex items-center gap-3 px-4 py-3.5 transition {{ $isSelected ? 'bg-blue-50/80 border-l-4 border-blue-600' : 'hover:bg-gray-50' }}"
+                            class="konsultasi-item flex items-center gap-3 px-4 py-3.5 transition {{ $isSelected ? 'bg-blue-50/70 border-l-4 border-blue-600' : 'hover:bg-gray-50' }}"
                             data-nama="{{ strtolower($k->audiens->name) }}">
+                            
+                            {{-- Avatar --}}
                             @if ($fotoAudiens)
                                 <img src="{{ $fotoAudiens }}" alt="{{ $k->audiens->name }}"
-                                     class="w-11 h-11 shrink-0 rounded-full object-cover bg-gray-200">
+                                     class="w-11 h-11 shrink-0 rounded-full object-cover bg-gray-200 {{ $isSelected ? 'ring-2 ring-blue-500' : '' }}">
                             @else
                                 <div class="w-11 h-11 shrink-0 rounded-full {{ $isSelected ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-700' }} flex items-center justify-center font-bold text-sm">
                                     {{ strtoupper(substr($k->audiens->name, 0, 1)) }}
                                 </div>
                             @endif
+
+                            {{-- Informasi --}}
                             <div class="min-w-0 flex-1">
                                 <div class="flex items-center justify-between mb-0.5">
-                                    <p class="font-bold text-gray-800 text-sm truncate">{{ $k->audiens->name }}</p>
-                                    @if ($pesanTerakhir)
-                                        <span class="text-[11px] text-gray-400 shrink-0 ml-1">{{ $pesanTerakhir->created_at->format('H.i') }}</span>
-                                    @endif
+                                    <p class="font-bold text-gray-900 text-sm truncate">{{ $k->audiens->name }}</p>
+                                    <span class="text-[11px] text-gray-400 shrink-0 font-medium ml-1">
+                                        {{ $pesanTerakhir ? $pesanTerakhir->created_at->format('H.i') : $k->created_at->format('H.i') }}
+                                    </span>
                                 </div>
                                 <div class="flex items-center gap-1.5">
                                     @if ($k->status === 'menunggu')
-                                        <span class="text-[10px] font-semibold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded shrink-0">Menunggu</span>
+                                        <span class="text-xs font-bold text-amber-600 shrink-0">Menunggu</span>
                                     @elseif ($k->status === 'berlangsung')
-                                        <span class="text-[10px] font-semibold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded shrink-0">Aktif</span>
+                                        <span class="text-xs font-bold text-emerald-600 shrink-0">Aktif</span>
                                     @else
-                                        <span class="text-[10px] font-semibold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded shrink-0">Selesai</span>
+                                        <span class="text-xs font-bold text-gray-500 shrink-0">Selesai</span>
                                     @endif
-                                    <p class="text-xs text-gray-500 truncate flex-1">
+                                    <span class="text-xs text-gray-500 truncate flex-1">
                                         {{ $pesanTerakhir?->isi_pesan ?? ($k->topik->nama_topik ?? $k->topik_lainnya ?? 'Belum ada pesan') }}
-                                    </p>
+                                    </span>
                                 </div>
                             </div>
                         </a>
@@ -70,27 +78,30 @@
                 </div>
             </div>
 
-            {{-- Kolom kanan: isi chat --}}
-            <div class="flex-1 min-w-0 min-h-0 flex flex-col bg-white {{ $selected ? 'flex' : 'hidden sm:flex' }}">
+            {{-- Kolom kanan: ruang chat --}}
+            <div class="flex-1 flex flex-col bg-white min-w-0 {{ $selected ? 'flex' : 'hidden sm:flex' }}"
+                 style="flex: 1 1 0%; min-width: 0; height: 100%;">
                 @if ($selected)
                     @php $fotoSelected = $fotoUrl($selected->audiens); @endphp
-                    <div class="px-5 py-3.5 border-b border-gray-100 flex items-center gap-3 bg-white shrink-0">
-                        <a href="{{ route('konsultan.obrolan') }}" class="sm:hidden text-gray-400 hover:text-gray-600">
+                    
+                    {{-- Header Chat --}}
+                    <div class="px-5 py-3 border-b border-gray-100 flex items-center gap-3 bg-white shrink-0">
+                        <a href="{{ route('konsultan.obrolan') }}" class="sm:hidden text-gray-400 hover:text-gray-600 mr-1">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
                             </svg>
                         </a>
                         @if ($fotoSelected)
                             <img src="{{ $fotoSelected }}" alt="{{ $selected->audiens->name }}"
-                                 class="w-10 h-10 rounded-full object-cover bg-gray-200">
+                                 class="w-10 h-10 rounded-full object-cover bg-gray-200 shrink-0">
                         @else
-                            <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm">
+                            <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm shrink-0">
                                 {{ strtoupper(substr($selected->audiens->name, 0, 1)) }}
                             </div>
                         @endif
-                        <div>
+                        <div class="min-w-0">
                             <div class="flex items-center gap-2 flex-wrap">
-                                <p class="font-bold text-gray-900 leading-tight">{{ $selected->audiens->name }}</p>
+                                <p class="font-bold text-gray-900 leading-tight truncate">{{ $selected->audiens->name }}</p>
                                 @if ($selected->topik || $selected->topik_lainnya)
                                     <span class="text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-100 px-2.5 py-0.5 rounded-full whitespace-nowrap">
                                         {{ $selected->topik->nama_topik ?? $selected->topik_lainnya }}
@@ -103,7 +114,7 @@
                             </div>
                         </div>
                         <a href="{{ route('konsultasi.show', $selected->id) }}"
-                            class="ml-auto text-gray-400 hover:text-blue-600 text-xs font-medium hover:underline flex items-center gap-1">
+                            class="ml-auto text-gray-400 hover:text-blue-600 text-xs font-medium hover:underline flex items-center gap-1 shrink-0">
                             <span>Buka chat penuh</span>
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -111,9 +122,9 @@
                         </a>
                     </div>
 
-                    {{-- Chat Messages Area --}}
-                    <div class="flex-1 overflow-y-auto p-4 sm:p-5 flex flex-col gap-2.5 bg-slate-50" id="chat-box">
-                        {{-- Kartu topik --}}
+                    {{-- Isi Chat (Scrollable Area) --}}
+                    <div class="flex-1 overflow-y-auto p-4 sm:p-5 flex flex-col gap-2.5 bg-slate-50" id="chat-box" style="flex: 1 1 0%; min-height: 0;">
+                        {{-- Kartu Topik --}}
                         @if ($selected->topik || $selected->topik_lainnya)
                             <div class="flex justify-center mb-2">
                                 <div class="flex items-center gap-1.5 bg-white border border-gray-200 shadow-xs rounded-full px-4 py-1.5 text-xs text-gray-700 font-medium">
@@ -123,6 +134,7 @@
                             </div>
                         @endif
 
+                        {{-- Daftar Pesan --}}
                         @foreach ($selected->pesans as $pesan)
                             <div class="w-full flex {{ $pesan->pengirim_id === auth()->id() ? 'justify-end' : 'justify-start' }}">
                                 <div class="max-w-xs sm:max-w-md px-4 py-2.5 rounded-2xl shadow-xs {{ $pesan->pengirim_id === auth()->id() ? 'bg-blue-600 text-white rounded-br-sm' : 'bg-white text-gray-800 border border-gray-200 rounded-bl-sm' }}">
@@ -135,8 +147,9 @@
                         @endforeach
                     </div>
 
-                    {{-- Bottom Action: Jika Status Menunggu vs Berlangsung vs Selesai --}}
+                    {{-- Bagian Bawah: Proteksi Konfirmasi vs Form Kirim Pesan --}}
                     @if ($selected->status === 'menunggu')
+                        {{-- Status Menunggu: Belum Dikonfirmasi -> Konsultan tidak bisa kirim pesan, hanya konfirmasi --}}
                         <div class="p-4 border-t border-amber-200 bg-amber-50 shrink-0">
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                 <div class="flex items-center gap-2.5">
@@ -179,7 +192,7 @@
                             Konsultasi ini sudah selesai. Anda tidak dapat mengirim pesan lagi.
                         </div>
                     @else
-                        {{-- Form Kirim Pesan jika sudah diterima (berlangsung) --}}
+                        {{-- Status Berlangsung: SUDAH AKTIF -> Form Kirim Pesan Muncul --}}
                         <form id="form-pesan" class="p-3 border-t border-gray-200 flex gap-2.5 bg-white shrink-0">
                             <input type="text" id="input-pesan" autocomplete="off"
                                 class="flex-1 bg-gray-100 border-none rounded-full px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
@@ -217,7 +230,6 @@
             @if ($selected)
             const konsultasiId = {{ $selected->id }};
             const userId = {{ auth()->id() }};
-            const namaSaya = '{{ auth()->user()->name }}';
             const chatBox = document.getElementById('chat-box');
             const form = document.getElementById('form-pesan');
             const input = document.getElementById('input-pesan');
