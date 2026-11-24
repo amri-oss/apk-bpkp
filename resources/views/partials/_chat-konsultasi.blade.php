@@ -9,7 +9,7 @@
     <div class="flex justify-between items-center px-5 py-3 border-b border-gray-100">
         <div class="flex items-center gap-3">
             @if ($showBack ?? false)
-                <a href="{{ route('audiens.konsultasi-saya') }}" class="lg:hidden text-sm font-medium text-blue-600 hover:text-blue-800">
+                <a href="{{ auth()->user()->role === 'konsultan' ? route('konsultan.obrolan') : route('audiens.konsultasi-saya') }}" class="sm:hidden text-sm font-medium text-blue-600 hover:text-blue-800">
                     ← Daftar
                 </a>
             @endif
