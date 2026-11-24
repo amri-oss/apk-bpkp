@@ -8,14 +8,14 @@
         $fotoUrl = fn ($u) => $u->foto_profil ? asset('storage/' . $u->foto_profil) : null;
     @endphp
 
-    <div class="py-8">
-        <div class="max-w-6xl mx-auto sm:px-6 lg:px-8">
+    <div class="chat-page">
+        <div class="chat-page-container max-w-6xl mx-auto sm:px-6 lg:px-8">
 
             {{-- Split view: daftar obrolan (kiri) + chat aktif (kanan) --}}
-            <div class="bg-white rounded-2xl shadow-lg overflow-hidden flex" style="height: 70vh;">
+            <div class="chat-panel bg-white rounded-2xl shadow-lg overflow-hidden flex">
 
                 {{-- Kolom kiri: daftar obrolan --}}
-                <div class="w-full sm:w-72 shrink-0 border-r border-gray-100 flex flex-col {{ $selected ? 'hidden sm:flex' : 'flex' }}">
+                <div class="w-full sm:w-72 shrink-0 min-h-0 border-r border-gray-100 flex flex-col {{ $selected ? 'hidden sm:flex' : 'flex' }}">
                     <div class="p-3 border-b border-gray-100">
                         <div class="relative">
                             <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
@@ -58,7 +58,7 @@
                 </div>
 
                 {{-- Kolom kanan: isi chat --}}
-                <div class="flex-1 flex flex-col {{ $selected ? 'flex' : 'hidden sm:flex' }}">
+                <div class="flex-1 min-w-0 min-h-0 flex flex-col {{ $selected ? 'flex' : 'hidden sm:flex' }}">
                     @if ($selected)
                         @php $fotoSelected = $fotoUrl($selected->audiens); @endphp
                         <div class="px-4 py-3 border-b border-gray-100 flex items-center gap-3">

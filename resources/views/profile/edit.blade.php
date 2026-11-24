@@ -31,7 +31,7 @@
         <div class="px-4 sm:px-6 lg:px-8 space-y-6" style="max-width: 56rem; margin-left: auto; margin-right: auto;">
 
             {{-- Banner --}}
-            <div class="bg-[#00C2FF] text-white rounded-2xl shadow-md px-6 py-4 flex justify-between items-start">
+            <div class="page-banner px-6 py-4 flex justify-between items-start">
                 <div>
                     <h1 class="text-2xl font-bold">Profil Saya</h1>
                     <p class="text-lg">Kelola informasi akun dan keamanan kamu</p>

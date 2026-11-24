@@ -1,9 +1,9 @@
 <x-app-layout>
-    <div class="py-8">
+    <div class="py-5">
         <div class="max-w-6xl mx-auto sm:px-6 lg:px-8">
 
             {{-- Banner --}}
-            <div class="bg-[#00C2FF] text-white rounded-2xl shadow-md px-6 py-4 flex justify-between items-start mb-6">
+            <div class="page-banner px-6 py-4 flex justify-between items-start mb-6">
                 <div>
                     <h1 class="text-2xl font-bold">Kelola Akun Pengguna</h1>
                     <p class="text-lg">Kelola Data dan Akun Pengguna</p>
@@ -74,8 +74,13 @@
                                 <td class="px-4 py-3 text-center">
                                     <a href="{{ route('admin.users.edit', $u->id) }}"
                                        class="inline-block bg-[#0A84FF] hover:bg-blue-600 text-white font-bold px-4 py-1 rounded">
-                                        Detail
+                                        Edit
                                     </a>
+                                    <form action="{{ route('admin.users.destroy', $u->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Hapus akun pengguna ini? Data terkait juga akan terhapus.')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" @disabled($u->id === auth()->id()) class="inline-block bg-red-600 hover:bg-red-700 disabled:bg-gray-300 text-white font-bold px-4 py-1 rounded">Hapus</button>
+                                    </form>
                                 </td>
                             </tr>
                         @empty

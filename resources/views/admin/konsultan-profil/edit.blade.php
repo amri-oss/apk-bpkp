@@ -26,8 +26,8 @@
                     {{-- Nama --}}
                     <div>
                         <label class="block text-xs font-bold text-gray-500 mb-1">Nama</label>
-                        <input type="text" value="{{ $konsultanProfil->user->name }}" disabled
-                               class="w-full h-12 rounded-xl border border-gray-500 bg-gray-50 px-4 text-sm text-gray-700">
+                        <input type="text" name="name" value="{{ old('name', $konsultanProfil->user->name) }}" required
+                               class="w-full h-12 rounded-xl border border-gray-500 px-4 text-sm text-gray-900 focus:ring-0 focus:border-blue-500">
                     </div>
 
                     {{-- Foto Profil --}}
@@ -57,8 +57,15 @@
                     {{-- Email --}}
                     <div>
                         <label class="block text-xs font-bold text-gray-500 mb-1">Email</label>
-                        <input type="email" value="{{ $konsultanProfil->user->email }}" disabled
-                               class="w-full h-12 rounded-xl border border-gray-500 bg-gray-50 px-4 text-sm text-gray-700">
+                        <input type="email" name="email" value="{{ old('email', $konsultanProfil->user->email) }}" required
+                               class="w-full h-12 rounded-xl border border-gray-500 px-4 text-sm text-gray-900 focus:ring-0 focus:border-blue-500">
+                    </div>
+
+                    {{-- Jabatan --}}
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1">Jabatan</label>
+                        <input type="text" name="jabatan" value="{{ old('jabatan', $konsultanProfil->jabatan) }}" required maxlength="255"
+                               class="w-full h-12 rounded-xl border border-gray-500 px-4 text-sm text-gray-900 focus:ring-0 focus:border-blue-500">
                     </div>
 
                     {{-- Bidang --}}

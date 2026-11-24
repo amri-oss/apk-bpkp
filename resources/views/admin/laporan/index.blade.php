@@ -1,8 +1,4 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Laporan Sistem</h2>
-    </x-slot>
-
     @php
         $tanggal = \Carbon\Carbon::now()->locale('id')->translatedFormat('d F Y');
 
@@ -24,7 +20,7 @@
         $selectClass   = 'w-32 rounded-full border-0 bg-white py-1 pl-3 pr-7 text-[11px] text-gray-700 shadow-sm focus:ring-2 focus:ring-blue-400';
     @endphp
 
-    <div class="py-8">
+    <div class="py-5">
         <div class="max-w-6xl mx-auto sm:px-6 lg:px-8">
 
             {{-- Judul khusus saat dicetak --}}
@@ -34,7 +30,7 @@
             </div>
 
             {{-- Banner --}}
-            <section class="flex items-start justify-between rounded-2xl bg-[#00C2FF] px-6 py-4 text-white shadow-md print:hidden">
+            <section class="page-banner flex items-start justify-between px-6 py-4 print:hidden">
                 <div>
                     <h1 class="text-2xl font-bold leading-tight">Cetak Laporan</h1>
                     <p class="text-lg">Cetak laporan konsultasi yang telah berlangsung</p>

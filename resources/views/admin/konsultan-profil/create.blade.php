@@ -58,6 +58,13 @@
                         <p class="text-xs text-gray-400 mt-1">Minimal 8 karakter. Dipakai konsultan untuk login.</p>
                     </div>
 
+                    {{-- Jabatan --}}
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1">Jabatan</label>
+                        <input type="text" name="jabatan" value="{{ old('jabatan') }}" required maxlength="255"
+                               class="w-full h-12 rounded-xl border border-gray-500 px-4 text-sm text-gray-900 focus:ring-0 focus:border-blue-500">
+                    </div>
+
                     {{-- Bidang --}}
                     <div>
                         <label class="block text-xs font-bold text-gray-500 mb-1">Bidang</label>
