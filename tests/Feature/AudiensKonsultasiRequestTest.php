@@ -72,7 +72,7 @@ class AudiensKonsultasiRequestTest extends TestCase
             ->assertDontSee('Hapus Semua');
     }
 
-    public function test_waiting_consultant_can_see_the_composer_to_accept_the_request(): void
+    public function test_waiting_consultant_cannot_see_composer_until_confirmed(): void
     {
         [$audiens, $konsultan, $topik] = $this->usersAndTopic();
         $konsultasi = Konsultasi::create([
@@ -90,9 +90,51 @@ class AudiensKonsultasiRequestTest extends TestCase
         $this->actingAs($konsultan)
             ->get(route('konsultan.obrolan', $konsultasi))
             ->assertOk()
-            ->assertSee('id="form-pesan"', false)
+            ->assertDontSee('id="form-pesan"', false)
+            ->assertSee('Konfirmasi Permintaan Konsultasi')
+            ->assertSee('Terima Permintaan')
+            ->assertSee('Tolak')
             ->assertDontSee('id="btn-hapus-semua"', false)
             ->assertDontSee('Tandai Selesai');
+    }
+
+    public function test_consultant_can_accept_request_and_then_chat_becomes_active(): void
+    {
+        [$audiens, $konsultan, $topik] = $this->usersAndTopic();
+        $konsultasi = Konsultasi::create([
+            'audiens_id' => $audiens->id,
+            'konsultan_id' => $konsultan->id,
+            'topik_id' => $topik->id,
+            'status' => 'menunggu',
+        ]);
+
+        $response = $this->actingAs($konsultan)
+            ->patch(route('konsultasi.terima', $konsultasi));
+
+        $response->assertRedirect(route('konsultan.obrolan', $konsultasi->id));
+        $this->assertSame('berlangsung', $konsultasi->fresh()->status);
+
+        $this->actingAs($konsultan)
+            ->get(route('konsultan.obrolan', $konsultasi))
+            ->assertOk()
+            ->assertSee('id="form-pesan"', false);
+    }
+
+    public function test_consultant_cannot_send_message_when_still_waiting_confirmation(): void
+    {
+        [$audiens, $konsultan, $topik] = $this->usersAndTopic();
+        $konsultasi = Konsultasi::create([
+            'audiens_id' => $audiens->id,
+            'konsultan_id' => $konsultan->id,
+            'topik_id' => $topik->id,
+            'status' => 'menunggu',
+        ]);
+
+        $this->actingAs($konsultan)
+            ->postJson(route('pesan.store', $konsultasi), [
+                'isi_pesan' => 'Halo, ini balasan konsultan.',
+            ])
+            ->assertStatus(403);
     }
 
     private function usersAndTopic(): array
