@@ -2,6 +2,8 @@
     @php
         $audiensMenungguPersetujuan = auth()->id() === $konsultasi->audiens_id
             && $konsultasi->status === 'menunggu';
+        $konsultanBelumKonfirmasi = auth()->id() === $konsultasi->konsultan_id
+            && $konsultasi->status === 'menunggu';
     @endphp
 
     <div class="flex justify-between items-center px-5 py-3 border-b border-gray-100">
@@ -81,9 +83,11 @@
                 data-nama="{{ $pesan->pengirim->name }}"
                 data-milik-sendiri="{{ $pesan->pengirim_id === auth()->id() ? '1' : '0' }}">
 
-                <button class="btn-reply shrink-0 w-7 h-7 flex items-center justify-center rounded-full text-gray-400 opacity-0 group-hover:opacity-100 hover:text-blue-600 hover:bg-white transition text-base">
-                    ↩
-                </button>
+                @if (!$audiensMenungguPersetujuan && !$konsultanBelumKonfirmasi && $konsultasi->status !== 'selesai')
+                    <button class="btn-reply shrink-0 w-7 h-7 flex items-center justify-center rounded-full text-gray-400 opacity-0 group-hover:opacity-100 hover:text-blue-600 hover:bg-white transition text-base">
+                        ↩
+                    </button>
+                @endif
 
                 <div class="pesan-bubble max-w-xs sm:max-w-sm px-4 py-2.5 shadow-sm select-none {{ $pesan->pengirim_id === auth()->id() ? 'bg-blue-600 text-white rounded-2xl rounded-br-sm' : 'bg-white text-gray-800 border border-gray-200 rounded-2xl rounded-bl-sm' }}"
                     style="-webkit-touch-callout: none; -webkit-user-select: none; touch-action: pan-y;">
@@ -128,6 +132,39 @@
         <div class="border-t border-blue-100 bg-blue-50 px-5 py-4 text-center">
             <p class="text-sm font-semibold text-blue-800">Menunggu persetujuan konsultan</p>
             <p class="mt-1 text-xs text-blue-700">Deskripsi konsultasi Anda sudah dikirim. Kolom pesan akan tersedia setelah konsultasi diterima.</p>
+        </div>
+    @elseif ($konsultanBelumKonfirmasi)
+        <div class="border-t border-amber-200 bg-amber-50 px-5 py-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                    <p class="text-sm font-semibold text-amber-900 flex items-center gap-1.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        Konfirmasi Permintaan Konsultasi
+                    </p>
+                    <p class="mt-0.5 text-xs text-amber-700">Anda hanya dapat melihat pesan permintaan ini. Silakan konfirmasi untuk mulai merespon dan membalas pesan.</p>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <form action="{{ route('konsultasi.tolak', $konsultasi->id) }}" method="POST"
+                          onsubmit="return confirm('Tolak permintaan konsultasi dari {{ $konsultasi->audiens->name }}?')">
+                        @csrf
+                        @method('PATCH')
+                        <button type="submit"
+                            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg shadow-sm transition">
+                            Tolak
+                        </button>
+                    </form>
+                    <form action="{{ route('konsultasi.terima', $konsultasi->id) }}" method="POST">
+                        @csrf
+                        @method('PATCH')
+                        <button type="submit"
+                            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm transition">
+                            Terima Permintaan
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
     @else
         @if ($konsultasi->status === 'selesai')
