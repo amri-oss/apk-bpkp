@@ -1,4 +1,4 @@
-<div class="chat-panel bg-white shadow-lg rounded-2xl overflow-hidden flex flex-col h-full">
+<div class="chat-panel bg-white flex flex-col h-full w-full overflow-hidden" style="display: flex; flex-direction: column; height: 100%; min-height: 0;">
     @php
         $audiensMenungguPersetujuan = auth()->id() === $konsultasi->audiens_id
             && $konsultasi->status === 'menunggu';
@@ -61,7 +61,7 @@
         </p>
     </div>
 
-    <div class="flex-1 overflow-y-auto p-5 flex flex-col gap-3 bg-gray-50" id="chat-box">
+    <div class="flex-1 overflow-y-auto p-4 sm:p-5 flex flex-col gap-3 bg-gray-50 min-h-0" id="chat-box" style="flex: 1 1 0%; min-height: 0;">
 
         {{-- Kartu topik --}}
         @if ($konsultasi->topik || $konsultasi->topik_lainnya)
@@ -129,12 +129,12 @@
     </div>
 
     @if ($audiensMenungguPersetujuan)
-        <div class="border-t border-blue-100 bg-blue-50 px-5 py-4 text-center">
+        <div class="border-t border-blue-100 bg-blue-50 px-5 py-4 text-center shrink-0" style="flex-shrink: 0;">
             <p class="text-sm font-semibold text-blue-800">Menunggu persetujuan konsultan</p>
             <p class="mt-1 text-xs text-blue-700">Deskripsi konsultasi Anda sudah dikirim. Kolom pesan akan tersedia setelah konsultasi diterima.</p>
         </div>
     @elseif ($konsultanBelumKonfirmasi)
-        <div class="border-t border-amber-200 bg-amber-50 px-5 py-4">
+        <div class="border-t border-amber-200 bg-amber-50 px-5 py-4 shrink-0" style="flex-shrink: 0;">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                     <p class="text-sm font-semibold text-amber-900 flex items-center gap-1.5">
@@ -168,8 +168,8 @@
         </div>
     @else
         @if ($konsultasi->status === 'selesai')
-            <div class="px-4 pt-2 bg-white border-t border-gray-100">
-                <div class="flex items-center justify-center gap-2 py-3 mb-4 bg-gray-100 rounded-xl text-sm text-gray-500">
+            <div class="px-4 pt-2.5 pb-2 bg-white border-t border-gray-100 shrink-0" style="flex-shrink: 0;">
+                <div class="flex items-center justify-center gap-2 py-2 mb-2 bg-gray-100 rounded-xl text-sm text-gray-500">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
@@ -178,7 +178,7 @@
             </div>
         @endif
 
-        <div class="px-4 pt-2 bg-white border-t border-gray-100">
+        <div class="px-4 pt-2.5 pb-2.5 bg-white border-t border-gray-200 shrink-0" style="flex-shrink: 0;">
             <div id="file-preview" class="hidden mb-2 bg-green-50 border-l-4 border-green-500 px-3 py-2 rounded-lg flex justify-between items-center">
                 <p class="text-xs text-gray-600 truncate" id="file-preview-nama"></p>
                 <button type="button" id="btn-batal-file" class="text-gray-400 hover:text-red-500 text-sm ml-2">✕</button>
@@ -192,7 +192,7 @@
                 <button type="button" id="btn-batal-reply" class="text-gray-400 hover:text-red-500 text-sm ml-2 shrink-0">✕</button>
             </div>
 
-            <form id="form-pesan" class="flex gap-2 items-center pb-4">
+            <form id="form-pesan" class="flex gap-2 items-center">
                 <label for="input-file"
                     class="cursor-pointer w-10 h-10 shrink-0 flex items-center justify-center rounded-full text-gray-500 hover:text-blue-600 hover:bg-gray-100 transition text-lg {{ $konsultasi->status === 'selesai' ? 'opacity-40 pointer-events-none' : '' }}"
                     title="Kirim file/foto">
