@@ -63,6 +63,18 @@ class UserController extends Controller
 
         $user->forceFill($validated)->save();
 
+        // Data akun konsultan juga ditampilkan di Kelola Konsultan.
+        if ($user->role === 'konsultan' && $user->konsultanProfil) {
+            $profil = $user->konsultanProfil;
+            if (isset($validated['foto_profil'])) {
+                if ($profil->foto_profil && $profil->foto_profil !== $validated['foto_profil']) {
+                    Storage::disk('public')->delete($profil->foto_profil);
+                }
+                $profil->foto_profil = $validated['foto_profil'];
+            }
+            $profil->save();
+        }
+
         ActivityLog::catat(Auth::id(), 'Kelola Akun', Auth::user()->name . ' memperbarui akun ' . $user->name);
 
         return redirect()->route('admin.users.index')->with('success', 'Akun berhasil diperbarui.');
@@ -74,11 +86,14 @@ class UserController extends Controller
 
         $nama = $user->name;
 
-        if ($user->foto_profil) {
+        if ($user->role === 'konsultan' && $user->konsultanProfil?->foto_profil) {
+            Storage::disk('public')->delete($user->konsultanProfil->foto_profil);
+        }
+        if ($user->foto_profil && $user->foto_profil !== $user->konsultanProfil?->foto_profil) {
             Storage::disk('public')->delete($user->foto_profil);
         }
 
-        $user->delete();
+        $user->delete(); // Profil konsultan ikut terhapus melalui relasi cascade.
 
         ActivityLog::catat(Auth::id(), 'Kelola Akun', Auth::user()->name . ' menghapus akun ' . $nama);
 

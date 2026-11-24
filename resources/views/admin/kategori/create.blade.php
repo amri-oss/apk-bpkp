@@ -1,13 +1,9 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Tambah Kategori Konsultan</h2>
-    </x-slot>
-
-    <div class="py-8">
-        <div class="max-w-2xl mx-auto sm:px-6 lg:px-8 space-y-6">
+    <div class="py-5">
+        <div class="max-w-2xl mx-auto sm:px-6 lg:px-8 space-y-4">
 
             {{-- Banner --}}
-            <div class="bg-gradient-to-r from-sky-500 to-cyan-400 rounded-2xl shadow p-6 text-white">
+            <div class="page-banner rounded-2xl p-6">
                 <h1 class="text-2xl font-bold">Tambah Kategori Konsultan</h1>
                 <p class="text-sky-50 mt-1">Buat kategori/bidang konsultan baru</p>
             </div>

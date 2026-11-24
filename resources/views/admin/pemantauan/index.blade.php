@@ -1,8 +1,4 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Memantau Percakapan</h2>
-    </x-slot>
-
     @php
         $tanggal = \Carbon\Carbon::now()->locale('id')->translatedFormat('d F Y');
 
@@ -16,11 +12,11 @@
         ];
     @endphp
 
-    <div class="py-8">
+    <div class="py-5">
         <div class="max-w-6xl mx-auto sm:px-6 lg:px-8">
 
             {{-- Banner --}}
-            <section class="flex items-start justify-between rounded-2xl bg-[#00C2FF] px-6 py-4 text-white shadow-md">
+            <section class="page-banner flex items-start justify-between px-6 py-4">
                 <div>
                     <h1 class="text-2xl font-bold leading-tight">Pantau Percakapan</h1>
                     <p class="text-lg">Pantau percakapan saat konsultasi</p>
