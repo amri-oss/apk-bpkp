@@ -1,17 +1,13 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Topik Konsultasi</h2>
-    </x-slot>
-
-    <div class="py-8">
-        <div class="max-w-6xl mx-auto sm:px-6 lg:px-8 space-y-6">
+    <div class="py-5">
+        <div class="max-w-6xl mx-auto sm:px-6 lg:px-8 space-y-4">
 
             @if (session('success'))
                 <div class="bg-green-100 text-green-700 p-3 rounded-lg text-sm">{{ session('success') }}</div>
             @endif
 
             {{-- Banner --}}
-            <div class="bg-gradient-to-r from-sky-500 to-cyan-400 rounded-2xl shadow p-6 flex items-center justify-between text-white">
+            <div class="page-banner rounded-2xl p-6 flex items-center justify-between">
                 <div>
                     <h1 class="text-2xl font-bold">Topik Konsultasi</h1>
                     <p class="text-sky-50 mt-1">Kelola daftar topik pertanyaan untuk tiap bidang</p>

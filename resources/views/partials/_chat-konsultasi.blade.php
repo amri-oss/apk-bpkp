@@ -1,7 +1,18 @@
-<div class="bg-white shadow-lg rounded-2xl overflow-hidden flex flex-col h-full" style="min-height: 78vh;">
+<div class="chat-panel bg-white flex flex-col h-full w-full overflow-hidden" style="display: flex; flex-direction: column; height: 100%; min-height: 0;">
+    @php
+        $audiensMenungguPersetujuan = auth()->id() === $konsultasi->audiens_id
+            && $konsultasi->status === 'menunggu';
+        $konsultanBelumKonfirmasi = auth()->id() === $konsultasi->konsultan_id
+            && $konsultasi->status === 'menunggu';
+    @endphp
 
     <div class="flex justify-between items-center px-5 py-3 border-b border-gray-100">
         <div class="flex items-center gap-3">
+            @if ($showBack ?? false)
+                <a href="{{ auth()->user()->role === 'konsultan' ? route('konsultan.obrolan') : route('audiens.konsultasi-saya') }}" class="sm:hidden text-sm font-medium text-blue-600 hover:text-blue-800">
+                    ← Daftar
+                </a>
+            @endif
             <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-semibold">
                 {{ strtoupper(substr(auth()->user()->id === $konsultasi->audiens_id ? $konsultasi->konsultan->name : $konsultasi->audiens->name, 0, 1)) }}
             </div>
@@ -22,7 +33,7 @@
             </div>
         </div>
         <div class="flex items-center gap-2">
-            @if ($konsultasi->status !== 'selesai')
+            @if (!in_array($konsultasi->status, ['menunggu', 'selesai'], true))
                 <form action="{{ route('konsultasi.selesai', $konsultasi->id) }}" method="POST"
                       onsubmit="return confirm('Tandai konsultasi ini sebagai selesai?')">
                     @csrf
@@ -32,13 +43,15 @@
                     </button>
                 </form>
             @endif
-            <button id="btn-hapus-semua"
-                class="flex items-center gap-1.5 text-red-500 text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-red-50 transition">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-                Hapus Semua
-            </button>
+            @if ($konsultasi->status !== 'menunggu')
+                <button id="btn-hapus-semua"
+                    class="flex items-center gap-1.5 text-red-500 text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-red-50 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Hapus Semua
+                </button>
+            @endif
         </div>
     </div>
 
@@ -48,7 +61,7 @@
         </p>
     </div>
 
-    <div class="flex-1 overflow-y-auto p-5 flex flex-col gap-3 bg-gray-50" id="chat-box">
+    <div class="flex-1 overflow-y-auto p-4 sm:p-5 flex flex-col gap-3 bg-gray-50 min-h-0" id="chat-box" style="flex: 1 1 0%; min-height: 0;">
 
         {{-- Kartu topik --}}
         @if ($konsultasi->topik || $konsultasi->topik_lainnya)
@@ -70,9 +83,11 @@
                 data-nama="{{ $pesan->pengirim->name }}"
                 data-milik-sendiri="{{ $pesan->pengirim_id === auth()->id() ? '1' : '0' }}">
 
-                <button class="btn-reply shrink-0 w-7 h-7 flex items-center justify-center rounded-full text-gray-400 opacity-0 group-hover:opacity-100 hover:text-blue-600 hover:bg-white transition text-base">
-                    ↩
-                </button>
+                @if (!$audiensMenungguPersetujuan && !$konsultanBelumKonfirmasi && $konsultasi->status !== 'selesai')
+                    <button class="btn-reply shrink-0 w-7 h-7 flex items-center justify-center rounded-full text-gray-400 opacity-0 group-hover:opacity-100 hover:text-blue-600 hover:bg-white transition text-base">
+                        ↩
+                    </button>
+                @endif
 
                 <div class="pesan-bubble max-w-xs sm:max-w-sm px-4 py-2.5 shadow-sm select-none {{ $pesan->pengirim_id === auth()->id() ? 'bg-blue-600 text-white rounded-2xl rounded-br-sm' : 'bg-white text-gray-800 border border-gray-200 rounded-2xl rounded-bl-sm' }}"
                     style="-webkit-touch-callout: none; -webkit-user-select: none; touch-action: pan-y;">
@@ -113,49 +128,91 @@
         @endforeach
     </div>
 
-    <div class="px-4 pt-2 bg-white border-t border-gray-100">
-        <div id="file-preview" class="hidden mb-2 bg-green-50 border-l-4 border-green-500 px-3 py-2 rounded-lg flex justify-between items-center">
-            <p class="text-xs text-gray-600 truncate" id="file-preview-nama"></p>
-            <button type="button" id="btn-batal-file" class="text-gray-400 hover:text-red-500 text-sm ml-2">✕</button>
+    @if ($audiensMenungguPersetujuan)
+        <div class="border-t border-blue-100 bg-blue-50 px-5 py-4 text-center shrink-0" style="flex-shrink: 0;">
+            <p class="text-sm font-semibold text-blue-800">Menunggu persetujuan konsultan</p>
+            <p class="mt-1 text-xs text-blue-700">Deskripsi konsultasi Anda sudah dikirim. Kolom pesan akan tersedia setelah konsultasi diterima.</p>
         </div>
-
-        <div id="reply-preview" class="hidden mb-2 bg-blue-50 border-l-4 border-blue-500 px-3 py-2 rounded-lg flex justify-between items-start">
-            <div class="min-w-0">
-                <p class="text-xs font-semibold text-blue-600" id="reply-nama"></p>
-                <p class="text-xs text-gray-500 truncate" id="reply-isi"></p>
+    @elseif ($konsultanBelumKonfirmasi)
+        <div class="border-t border-amber-200 bg-amber-50 px-5 py-4 shrink-0" style="flex-shrink: 0;">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                    <p class="text-sm font-semibold text-amber-900 flex items-center gap-1.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        Konfirmasi Permintaan Konsultasi
+                    </p>
+                    <p class="mt-0.5 text-xs text-amber-700">Anda hanya dapat melihat pesan permintaan ini. Silakan konfirmasi untuk mulai merespon dan membalas pesan.</p>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <form action="{{ route('konsultasi.tolak', $konsultasi->id) }}" method="POST"
+                          onsubmit="return confirm('Tolak permintaan konsultasi dari {{ $konsultasi->audiens->name }}?')">
+                        @csrf
+                        @method('PATCH')
+                        <button type="submit"
+                            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg shadow-sm transition">
+                            Tolak
+                        </button>
+                    </form>
+                    <form action="{{ route('konsultasi.terima', $konsultasi->id) }}" method="POST">
+                        @csrf
+                        @method('PATCH')
+                        <button type="submit"
+                            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm transition">
+                            Terima Permintaan
+                        </button>
+                    </form>
+                </div>
             </div>
-            <button type="button" id="btn-batal-reply" class="text-gray-400 hover:text-red-500 text-sm ml-2 shrink-0">✕</button>
         </div>
-
+    @else
         @if ($konsultasi->status === 'selesai')
-            <div class="flex items-center justify-center gap-2 py-3 mb-4 bg-gray-100 rounded-xl text-sm text-gray-500">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-                Konsultasi ini sudah selesai. Anda tidak dapat mengirim pesan lagi.
+            <div class="px-4 pt-2.5 pb-2 bg-white border-t border-gray-100 shrink-0" style="flex-shrink: 0;">
+                <div class="flex items-center justify-center gap-2 py-2 mb-2 bg-gray-100 rounded-xl text-sm text-gray-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    Konsultasi ini sudah selesai. Anda tidak dapat mengirim pesan lagi.
+                </div>
             </div>
         @endif
 
-        <form id="form-pesan" class="flex gap-2 items-center pb-4">
-            <label for="input-file"
-                class="cursor-pointer w-10 h-10 shrink-0 flex items-center justify-center rounded-full text-gray-500 hover:text-blue-600 hover:bg-gray-100 transition text-lg {{ $konsultasi->status === 'selesai' ? 'opacity-40 pointer-events-none' : '' }}"
-                title="Kirim file/foto">
-                📎
-            </label>
-            <input type="file" id="input-file" class="hidden" {{ $konsultasi->status === 'selesai' ? 'disabled' : '' }}>
-            <input type="text" id="input-pesan" autocomplete="off"
-                class="flex-1 bg-gray-100 border-none rounded-full px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                placeholder="Tulis pesan..."
-                {{ $konsultasi->status === 'selesai' ? 'disabled' : '' }}>
-            <button type="submit"
-                class="w-10 h-10 shrink-0 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
-                {{ $konsultasi->status === 'selesai' ? 'disabled' : '' }}>
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5m0 0l-6 6m6-6l6 6" />
-                </svg>
-            </button>
-        </form>
-    </div>
+        <div class="px-4 pt-2.5 pb-2.5 bg-white border-t border-gray-200 shrink-0" style="flex-shrink: 0;">
+            <div id="file-preview" class="hidden mb-2 bg-green-50 border-l-4 border-green-500 px-3 py-2 rounded-lg flex justify-between items-center">
+                <p class="text-xs text-gray-600 truncate" id="file-preview-nama"></p>
+                <button type="button" id="btn-batal-file" class="text-gray-400 hover:text-red-500 text-sm ml-2">✕</button>
+            </div>
+
+            <div id="reply-preview" class="hidden mb-2 bg-blue-50 border-l-4 border-blue-500 px-3 py-2 rounded-lg flex justify-between items-start">
+                <div class="min-w-0">
+                    <p class="text-xs font-semibold text-blue-600" id="reply-nama"></p>
+                    <p class="text-xs text-gray-500 truncate" id="reply-isi"></p>
+                </div>
+                <button type="button" id="btn-batal-reply" class="text-gray-400 hover:text-red-500 text-sm ml-2 shrink-0">✕</button>
+            </div>
+
+            <form id="form-pesan" class="flex gap-2 items-center">
+                <label for="input-file"
+                    class="cursor-pointer w-10 h-10 shrink-0 flex items-center justify-center rounded-full text-gray-500 hover:text-blue-600 hover:bg-gray-100 transition text-lg {{ $konsultasi->status === 'selesai' ? 'opacity-40 pointer-events-none' : '' }}"
+                    title="Kirim file/foto">
+                    📎
+                </label>
+                <input type="file" id="input-file" class="hidden" {{ $konsultasi->status === 'selesai' ? 'disabled' : '' }}>
+                <input type="text" id="input-pesan" autocomplete="off"
+                    class="flex-1 bg-gray-100 border-none rounded-full px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    placeholder="Tulis pesan..."
+                    {{ $konsultasi->status === 'selesai' ? 'disabled' : '' }}>
+                <button type="submit"
+                    class="w-10 h-10 shrink-0 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    {{ $konsultasi->status === 'selesai' ? 'disabled' : '' }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5m0 0l-6 6m6-6l6 6" />
+                    </svg>
+                </button>
+            </form>
+        </div>
+    @endif
 
 </div>
 
@@ -185,6 +242,13 @@
         const filePreviewNama = document.getElementById('file-preview-nama');
         const btnBatalFile = document.getElementById('btn-batal-file');
         const btnHapusSemua = document.getElementById('btn-hapus-semua');
+        if (!form) {
+            window.Echo.private(`konsultasi.${konsultasiId}`)
+                .listen('.PesanDikirim', (e) => {
+                    if (e.pengirim_id !== userId) window.location.reload();
+                });
+            return;
+        }
         const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
         const replyPreview = document.getElementById('reply-preview');
@@ -432,19 +496,21 @@
             }
         });
 
-        btnHapusSemua.addEventListener('click', async () => {
-            if (!confirm('Hapus SEMUA chat di percakapan ini (hanya untuk kamu)? Tindakan ini tidak bisa dibatalkan.')) return;
+        if (btnHapusSemua) {
+            btnHapusSemua.addEventListener('click', async () => {
+                if (!confirm('Hapus SEMUA chat di percakapan ini (hanya untuk kamu)? Tindakan ini tidak bisa dibatalkan.')) return;
 
-            await fetch(`/konsultasi/${konsultasiId}/pesan`, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': csrfToken,
-                    'X-Socket-ID': window.Echo.socketId(),
-                },
+                await fetch(`/konsultasi/${konsultasiId}/pesan`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Socket-ID': window.Echo.socketId(),
+                    },
+                });
+
+                chatBox.innerHTML = '';
             });
-
-            chatBox.innerHTML = '';
-        });
+        }
 
         form.addEventListener('submit', async function (e) {
             e.preventDefault();

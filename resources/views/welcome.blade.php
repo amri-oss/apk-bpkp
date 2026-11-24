@@ -6,11 +6,11 @@
     <title>Aplikasi Konsultasi Online - BPKP Perwakilan Sulawesi Selatan</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="antialiased bg-gray-50">
+<body class="min-h-screen flex flex-col antialiased bg-gray-50">
 
     {{-- Header --}}
-    <header class="bg-white shadow-sm">
-        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+    <header class="shrink-0 bg-white shadow-sm">
+        <div class="max-w-6xl mx-auto px-6 py-3 flex justify-between items-center">
             <div class="flex items-center gap-3">
                 <img src="{{ asset('images/logo-bpkp.png') }}" alt="Logo BPKP" class="h-10 w-auto">
                 <span class="font-semibold text-gray-800">
@@ -30,8 +30,8 @@
     </header>
 
     {{-- Hero --}}
-    <section class="relative w-full">
-        <img src="{{ asset('images/gedung-bpkp.jpg') }}" alt="Gedung BPKP" class="w-full h-auto block">
+    <section class="relative flex-1 min-h-0 min-h-[18rem] md:min-h-0 w-full overflow-hidden">
+        <img src="{{ asset('images/gedung-bpkp.jpg') }}" alt="Gedung BPKP" class="absolute inset-0 h-full w-full object-cover object-center">
 
         <div class="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent flex items-center">
             <div class="max-w-6xl mx-auto px-6 w-full">
@@ -52,7 +52,7 @@
     </section>
 
     {{-- Footer --}}
-    <footer class="bg-gray-900 text-gray-300 text-center py-4 text-sm">
+    <footer class="shrink-0 bg-gray-900 text-gray-300 text-center py-3 text-sm">
         © {{ date('Y') }} BPKP Perwakilan Provinsi Sulawesi Selatan
     </footer>
 

@@ -12,7 +12,7 @@ class DashboardController extends Controller
     {
         $konsultasis = Auth::user()->konsultasiSebagaiKonsultan()
             ->where('disembunyikan_oleh_konsultan', false)
-            ->with('audiens')
+            ->with(['audiens', 'topik', 'pesans'])
             ->latest()
             ->get();
 

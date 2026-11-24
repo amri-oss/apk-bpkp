@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\AktivitasKonsultasi;
 use App\Events\PesanDibaca;
 use App\Models\Konsultasi;
 use App\Models\Pesan;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class KonsultasiController extends Controller
@@ -60,6 +62,45 @@ class KonsultasiController extends Controller
         }
 
         return back()->with('success', 'Konsultasi berhasil dihapus.');
+    }
+
+    public function terima(Request $request, Konsultasi $konsultasi)
+    {
+        $user = Auth::user();
+
+        abort_unless($konsultasi->konsultan_id === $user->id, 403);
+
+        $konsultasi->update(['status' => 'berlangsung']);
+
+        broadcast(new AktivitasKonsultasi($konsultasi->audiens_id))->toOthers();
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Permintaan konsultasi telah diterima.']);
+        }
+
+        return redirect()->route('konsultan.obrolan', $konsultasi->id)
+            ->with('success', 'Permintaan konsultasi telah diterima. Anda dapat memulai obrolan.');
+    }
+
+    public function tolak(Request $request, Konsultasi $konsultasi)
+    {
+        $user = Auth::user();
+
+        abort_unless($konsultasi->konsultan_id === $user->id, 403);
+
+        $konsultasi->update([
+            'status' => 'selesai',
+            'disembunyikan_oleh_konsultan' => true,
+        ]);
+
+        broadcast(new AktivitasKonsultasi($konsultasi->audiens_id))->toOthers();
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Permintaan konsultasi telah ditolak.']);
+        }
+
+        return redirect()->route('konsultan.dashboard')
+            ->with('success', 'Permintaan konsultasi telah ditolak.');
     }
 
     public function selesaikan(Konsultasi $konsultasi)

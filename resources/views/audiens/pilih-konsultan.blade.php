@@ -81,20 +81,36 @@
                                     <p class="text-sm text-blue-600 font-medium mb-3">Bidang {{ $kp->kategori->nama_kategori }}</p>
 
                                     <div class="w-full text-left">
-                                        <label class="block text-[11px] font-medium text-gray-500 mb-1">
-                                            Topik pertanyaan (opsional)
+                                        <label class="block text-[11px] font-medium text-gray-700 mb-1">
+                                            Topik konsultasi <span class="text-red-600">(wajib)</span>
                                         </label>
-                                        <select name="topik_id"
-                                            onchange="this.closest('form').querySelector('.topik-lainnya-input').classList.toggle('hidden', this.value !== 'lainnya')"
+                                        <select name="topik_id" required
+                                            onchange="const form=this.closest('form'); const custom=form.querySelector('.topik-lainnya-input'); custom.classList.toggle('hidden', this.value !== 'lainnya'); custom.required=this.value === 'lainnya';"
                                             class="w-full text-xs border border-gray-300 rounded-md px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-400">
                                             <option value="">-- Pilih topik --</option>
                                             @foreach ($topikBidang as $t)
-                                                <option value="{{ $t->id }}">{{ $t->nama_topik }}</option>
+                                                <option value="{{ $t->id }}" @selected(old('topik_id') == $t->id)>{{ $t->nama_topik }}</option>
                                             @endforeach
-                                            <option value="lainnya">Lainnya...</option>
+                                            <option value="lainnya" @selected(old('topik_id') === 'lainnya')>Lainnya...</option>
                                         </select>
-                                        <input type="text" name="topik_lainnya" placeholder="Tulis topik Anda..."
-                                            class="topik-lainnya-input hidden w-full text-xs border border-gray-300 rounded-md px-2 py-1.5 mt-1.5 focus:outline-none focus:ring-1 focus:ring-blue-400">
+                                        <input type="text" name="topik_lainnya" value="{{ old('topik_lainnya') }}" placeholder="Tulis topik Anda..."
+                                            @required(old('topik_id') === 'lainnya')
+                                            class="topik-lainnya-input {{ old('topik_id') === 'lainnya' ? '' : 'hidden' }} w-full text-xs border border-gray-300 rounded-md px-2 py-1.5 mt-1.5 focus:outline-none focus:ring-1 focus:ring-blue-400">
+                                        @error('topik_id')
+                                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                        @enderror
+                                        @error('topik_lainnya')
+                                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                        @enderror
+                                        <label class="block text-[11px] font-medium text-gray-700 mt-3 mb-1">
+                                            Deskripsi konsultasi <span class="text-red-600">(wajib)</span>
+                                        </label>
+                                        <textarea name="deskripsi" rows="3" required maxlength="2000"
+                                            placeholder="Jelaskan pertanyaan atau masalah yang ingin dikonsultasikan..."
+                                            class="w-full text-xs border border-gray-300 rounded-md px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-400">{{ old('deskripsi') }}</textarea>
+                                        @error('deskripsi')
+                                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                        @enderror
                                     </div>
                                 </div>
 
