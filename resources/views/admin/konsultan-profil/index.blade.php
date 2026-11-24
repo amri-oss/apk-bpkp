@@ -1,9 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Kelola Konsultan</h2>
-    </x-slot>
-
-    <div class="py-6">
+    <div class="py-5">
         <div class="max-w-6xl mx-auto sm:px-6 lg:px-8">
 
             @if (session('success'))
@@ -11,7 +7,7 @@
             @endif
 
             {{-- Banner biru judul halaman --}}
-            <div class="bg-blue-500 rounded-xl px-6 py-5 mb-6 flex items-center justify-between text-white">
+            <div class="page-banner px-6 py-5 mb-6 flex items-center justify-between">
                 <div>
                     <h1 class="text-lg font-bold">Kelola Konsultan</h1>
                     <p class="text-blue-100 text-sm">Kelola Data dan Akun Konsultan</p>
@@ -64,8 +60,13 @@
                                 <td class="px-4 py-3 text-center">
                                     <a href="{{ route('admin.konsultan-profil.edit', $profil->id) }}"
                                         class="inline-block bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-1.5 rounded-full transition">
-                                        Detail
+                                        Edit
                                     </a>
+                                    <form action="{{ route('admin.konsultan-profil.destroy', $profil->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Hapus konsultan ini beserta akun pengguna dan data konsultasinya?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-4 py-1.5 rounded-full transition">Hapus</button>
+                                    </form>
                                 </td>
                             </tr>
                         @empty
