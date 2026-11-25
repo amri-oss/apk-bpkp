@@ -123,17 +123,19 @@
                 </div>
             </div>
 
-            {{-- Ganti password --}}
-            <div class="p-4 sm:p-8 bg-white rounded-2xl shadow-md" style="border-left: 4px solid #0A84FF;">
-                <div class="max-w-xl">
-                    @include('profile.partials.update-password-form')
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {{-- Ganti password --}}
+                <div class="p-4 sm:p-6 bg-white rounded-2xl shadow-md" style="border-left: 4px solid #0A84FF;">
+                    <div class="max-w-xl">
+                        @include('profile.partials.update-password-form')
+                    </div>
                 </div>
-            </div>
 
-            {{-- Hapus akun --}}
-            <div class="p-4 sm:p-8 bg-white rounded-2xl shadow-md" style="border-left: 4px solid #F87171;">
-                <div class="max-w-xl">
-                    @include('profile.partials.delete-user-form')
+                {{-- Hapus akun --}}
+                <div class="p-4 sm:p-6 bg-white rounded-2xl shadow-md" style="border-left: 4px solid #F87171;">
+                    <div class="max-w-xl">
+                        @include('profile.partials.delete-user-form')
+                    </div>
                 </div>
             </div>
         </div>

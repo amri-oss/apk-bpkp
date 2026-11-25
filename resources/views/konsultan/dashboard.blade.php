@@ -9,7 +9,7 @@
         $selectedId = $konsultasis->first()?->id;
     @endphp
 
-    <div class="py-8">
+    <div class="py-8" x-data="tolakModal()">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 
             @if (session('success'))
@@ -192,11 +192,16 @@
                                                     <span class="font-semibold">Sudah Diterima · Sedang Berlangsung</span>
                                                 </div>
                                             @else
-                                                <div class="bg-gray-50 border border-gray-200 text-gray-700 rounded-xl p-3 text-xs flex items-center gap-2">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                                    </svg>
-                                                    <span class="font-medium">Konsultasi Selesai</span>
+                                                <div class="bg-gray-50 border border-gray-200 text-gray-700 rounded-xl p-3 text-xs">
+                                                    <div class="flex items-center gap-2">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                                        </svg>
+                                                        <span class="font-medium">Konsultasi Selesai</span>
+                                                    </div>
+                                                    @if ($k->alasan_tolak)
+                                                        <p class="mt-2 text-red-700"><span class="font-semibold">Alasan ditolak:</span> {{ $k->alasan_tolak }}</p>
+                                                    @endif
                                                 </div>
                                             @endif
                                         </div>
@@ -207,15 +212,11 @@
                                         @if ($k->status === 'menunggu')
                                             <div class="flex gap-2.5">
                                                 {{-- Tombol Tolak --}}
-                                                <form action="{{ route('konsultasi.tolak', $k->id) }}" method="POST" class="flex-1"
-                                                    onsubmit="return confirm('Apakah Anda yakin ingin menolak permintaan konsultasi dari {{ $k->audiens->name }}?')">
-                                                    @csrf
-                                                    @method('PATCH')
-                                                    <button type="submit"
-                                                        class="w-full bg-red-500 hover:bg-red-600 active:bg-red-700 text-white text-sm font-semibold py-2.5 px-4 rounded-xl transition shadow-sm">
-                                                        Tolak
-                                                    </button>
-                                                </form>
+                                                <button type="button"
+                                                    @click="bukaTolak('{{ route('konsultasi.tolak', $k->id) }}', @js($k->audiens->name))"
+                                                    class="flex-1 w-full bg-red-500 hover:bg-red-600 active:bg-red-700 text-white text-sm font-semibold py-2.5 px-4 rounded-xl transition shadow-sm">
+                                                    Tolak
+                                                </button>
 
                                                 {{-- Tombol Terima --}}
                                                 <form action="{{ route('konsultasi.terima', $k->id) }}" method="POST" class="flex-1">
@@ -255,10 +256,54 @@
 
             </div>
         </div>
+
+        {{-- Modal Tolak Konsultasi --}}
+        <div x-cloak x-show="open" class="fixed inset-0 z-50 flex items-center justify-center p-4" aria-modal="true" role="dialog">
+            <div class="absolute inset-0 bg-black/50" @click="tutup()"></div>
+            <div class="relative bg-white w-full max-w-md rounded-2xl shadow-xl p-6" @click.stop>
+                <h3 class="text-lg font-bold text-gray-900">Tolak Permintaan Konsultasi</h3>
+                <p class="text-sm text-gray-600 mt-1">Anda akan menolak permintaan dari <span class="font-semibold" x-text="nama"></span>.</p>
+                <form :action="action" method="POST" class="mt-4">
+                    @csrf
+                    @method('PATCH')
+                    <label for="alasan_tolak" class="block text-sm font-medium text-gray-700 mb-1">Alasan penolakan <span class="text-red-500">*</span></label>
+                    <textarea id="alasan_tolak" name="alasan_tolak" x-model="alasan" required rows="4" maxlength="1000"
+                        class="w-full rounded-xl border-gray-300 focus:border-red-500 focus:ring-red-500 text-sm"
+                        placeholder="Tuliskan alasan penolakan agar audiens memahami keputusan Anda..."></textarea>
+                    <div class="flex justify-end gap-2 mt-4">
+                        <button type="button" @click="tutup()" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200">Batal</button>
+                        <button type="submit" class="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700">Tolak Konsultasi</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
     @push('scripts')
     <script>
+        function tolakModal() {
+            return {
+                open: false,
+                action: '',
+                nama: '',
+                alasan: '',
+                bukaTolak(action, nama) {
+                    this.action = action;
+                    this.nama = nama;
+                    this.alasan = '';
+                    this.open = true;
+                    this.$nextTick(() => {
+                        const el = document.getElementById('alasan_tolak');
+                        if (el) el.focus();
+                    });
+                },
+                tutup() {
+                    this.open = false;
+                    this.alasan = '';
+                }
+            };
+        }
+
         function pilihKonsultasi(id) {
             // Update tampilan item kiri
             document.querySelectorAll('.konsultasi-item').forEach(function (item) {

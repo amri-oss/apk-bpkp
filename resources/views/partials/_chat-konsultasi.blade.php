@@ -134,7 +134,7 @@
             <p class="mt-1 text-xs text-blue-700">Deskripsi konsultasi Anda sudah dikirim. Kolom pesan akan tersedia setelah konsultasi diterima.</p>
         </div>
     @elseif ($konsultanBelumKonfirmasi)
-        <div class="border-t border-amber-200 bg-amber-50 px-5 py-4 shrink-0" style="flex-shrink: 0;">
+        <div class="border-t border-amber-200 bg-amber-50 px-5 py-4 shrink-0" style="flex-shrink: 0;" x-data="{ tolakOpen: false, alasanTolak: '' }">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                     <p class="text-sm font-semibold text-amber-900 flex items-center gap-1.5">
@@ -146,15 +146,10 @@
                     <p class="mt-0.5 text-xs text-amber-700">Anda hanya dapat melihat pesan permintaan ini. Silakan konfirmasi untuk mulai merespon dan membalas pesan.</p>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
-                    <form action="{{ route('konsultasi.tolak', $konsultasi->id) }}" method="POST"
-                          onsubmit="return confirm('Tolak permintaan konsultasi dari {{ $konsultasi->audiens->name }}?')">
-                        @csrf
-                        @method('PATCH')
-                        <button type="submit"
-                            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg shadow-sm transition">
-                            Tolak
-                        </button>
-                    </form>
+                    <button type="button" @click="tolakOpen = true; $nextTick(() => $refs.alasanTolak.focus())"
+                        class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg shadow-sm transition">
+                        Tolak
+                    </button>
                     <form action="{{ route('konsultasi.terima', $konsultasi->id) }}" method="POST">
                         @csrf
                         @method('PATCH')
@@ -162,6 +157,26 @@
                             class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm transition">
                             Terima Permintaan
                         </button>
+                    </form>
+                </div>
+            </div>
+
+            <div x-cloak x-show="tolakOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4" aria-modal="true" role="dialog">
+                <div class="absolute inset-0 bg-black/50" @click="tolakOpen = false"></div>
+                <div class="relative bg-white w-full max-w-md rounded-2xl shadow-xl p-6" @click.stop>
+                    <h3 class="text-lg font-bold text-gray-900">Tolak Permintaan Konsultasi</h3>
+                    <p class="text-sm text-gray-600 mt-1">Anda akan menolak permintaan dari <span class="font-semibold">{{ $konsultasi->audiens->name }}</span>.</p>
+                    <form action="{{ route('konsultasi.tolak', $konsultasi->id) }}" method="POST" class="mt-4">
+                        @csrf
+                        @method('PATCH')
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Alasan penolakan <span class="text-red-500">*</span></label>
+                        <textarea name="alasan_tolak" x-ref="alasanTolak" x-model="alasanTolak" required rows="4" maxlength="1000"
+                            class="w-full rounded-xl border-gray-300 focus:border-red-500 focus:ring-red-500 text-sm"
+                            placeholder="Tuliskan alasan penolakan agar audiens memahami keputusan Anda..."></textarea>
+                        <div class="flex justify-end gap-2 mt-4">
+                            <button type="button" @click="tolakOpen = false" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200">Batal</button>
+                            <button type="submit" class="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700">Tolak Konsultasi</button>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -175,6 +190,11 @@
                     </svg>
                     Konsultasi ini sudah selesai. Anda tidak dapat mengirim pesan lagi.
                 </div>
+                @if ($konsultasi->alasan_tolak)
+                    <div class="mb-2 bg-red-50 border border-red-200 text-red-800 rounded-xl px-3 py-2 text-sm">
+                        <span class="font-semibold">Alasan penolakan:</span> {{ $konsultasi->alasan_tolak }}
+                    </div>
+                @endif
             </div>
         @endif
 
@@ -243,10 +263,19 @@
         const btnBatalFile = document.getElementById('btn-batal-file');
         const btnHapusSemua = document.getElementById('btn-hapus-semua');
         if (!form) {
-            window.Echo.private(`konsultasi.${konsultasiId}`)
-                .listen('.PesanDikirim', (e) => {
-                    if (e.pengirim_id !== userId) window.location.reload();
-                });
+            if (window.Echo) {
+                window.Echo.private(`konsultasi.${konsultasiId}`)
+                    .listen('.PesanDikirim', (e) => {
+                        if (e.pengirim_id !== userId) window.location.reload();
+                    });
+                window.Echo.private(`user.${userId}`)
+                    .listen('.AktivitasKonsultasi', (e) => {
+                        if (e && e.tipe === 'pesan' && Number(e.konsultasi_id) === Number(konsultasiId)) {
+                            return;
+                        }
+                        window.location.reload();
+                    });
+            }
             return;
         }
         const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
@@ -529,37 +558,61 @@
             filePreview.classList.add('hidden');
             batalReply();
 
+            // Optimistic UI: tampilkan pesan langsung sebelum server merespons
+            const tempId = 'temp-' + Date.now();
+            const tempFileUrl = file ? URL.createObjectURL(file) : null;
+            const tempFileNama = file ? file.name : null;
+            const tempFileTipe = file ? file.type : null;
+            buatBubble(tempId, isiPesan, 'Baru saja', userId, namaSaya, balasKeSaatIni, tempFileUrl, tempFileNama, tempFileTipe);
+
             const formData = new FormData();
             if (isiPesan) formData.append('isi_pesan', isiPesan);
             if (balasKeIdSaatIni) formData.append('balas_ke_id', balasKeIdSaatIni);
             if (file) formData.append('file', file);
 
-            const res = await fetch(`/konsultasi/${konsultasiId}/pesan`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': csrfToken,
-                    'X-Socket-ID': window.Echo.socketId(),
-                },
-                body: formData,
-            });
-
-            const data = await res.json();
-            if (data.success) {
-                buatBubble(data.id, isiPesan, 'Baru saja', userId, namaSaya, data.balas_ke || balasKeSaatIni, data.file_url, data.file_nama, data.file_tipe);
+            try {
+                const res = await fetch(`/konsultasi/${konsultasiId}/pesan`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Socket-ID': window.Echo.socketId(),
+                    },
+                    body: formData,
+                });
+                const data = await res.json();
+                if (data && data.success) {
+                    // Ganti bubble sementara dengan data dari server
+                    const tempEl = document.getElementById(`pesan-${tempId}`);
+                    if (tempEl) tempEl.remove();
+                    buatBubble(data.id, isiPesan, 'Baru saja', userId, namaSaya, data.balas_ke || balasKeSaatIni, data.file_url, data.file_nama, data.file_tipe);
+                }
+            } catch (err) {
+                console.error('Gagal mengirim:', err);
+                // Biarkan bubble sementara tetap ada
             }
         });
 
-        window.Echo.private(`konsultasi.${konsultasiId}`)
-            .listen('.PesanDikirim', (e) => {
-                if (e.pengirim_id === userId) return;
-                buatBubble(e.id, e.isi_pesan, e.waktu, e.pengirim_id, e.pengirim_nama, e.balas_ke, e.file_url, e.file_nama, e.file_tipe);
-            })
-            .listen('.PesanDibaca', (e) => {
-                if (e.pembaca_id === userId) return;
-                document.querySelectorAll('[data-milik-sendiri="1"] .status-baca').forEach(el => {
+        if (window.Echo) {
+            window.Echo.private(`konsultasi.${konsultasiId}`)
+                .listen('.PesanDikirim', (e) => {
+                    if (e.pengirim_id === userId) return;
+                    buatBubble(e.id, e.isi_pesan, e.waktu, e.pengirim_id, e.pengirim_nama, e.balas_ke, e.file_url, e.file_nama, e.file_tipe);
+                })
+                .listen('.PesanDibaca', (e) => {
+                    if (e.pembaca_id === userId) return;
+                    document.querySelectorAll('[data-milik-sendiri="1"] .status-baca').forEach(el => {
                     el.textContent = ' · Dibaca';
+                    });
                 });
-            });
+
+            window.Echo.private(`user.${userId}`)
+                .listen('.AktivitasKonsultasi', (e) => {
+                    if (e && e.tipe === 'pesan' && Number(e.konsultasi_id) === Number(konsultasiId)) {
+                        return;
+                    }
+                    window.location.reload();
+                });
+        }
 
         chatBox.scrollTop = chatBox.scrollHeight;
     });

@@ -13,6 +13,7 @@ class Konsultasi extends Model
         'audiens_id',
         'konsultan_id',
         'status',
+        'alasan_tolak',
         'topik_id',
         'topik_lainnya',
         'disembunyikan_oleh_audiens',

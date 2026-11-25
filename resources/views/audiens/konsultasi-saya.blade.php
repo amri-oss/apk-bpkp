@@ -41,4 +41,17 @@
             </div>
         </div>
     </div>
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const userId = {{ auth()->id() }};
+            if (window.Echo) {
+                window.Echo.private(`user.${userId}`)
+                    .listen('.AktivitasKonsultasi', () => {
+                        window.location.reload();
+                    });
+            }
+        });
+    </script>
+    @endpush
 </x-app-layout>

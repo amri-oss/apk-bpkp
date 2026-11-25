@@ -90,10 +90,18 @@ class PesanController extends Controller
 
         ActivityLog::catat($user->id, 'Kirim Pesan', $user->name . ' mengirim pesan di konsultasi #' . $konsultasi->id);
 
-        broadcast(new PesanDikirim($pesan))->toOthers();
+        try {
+            broadcast(new PesanDikirim($pesan))->toOthers();
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         $penerimaId = $user->id === $konsultasi->audiens_id ? $konsultasi->konsultan_id : $konsultasi->audiens_id;
-        broadcast(new AktivitasKonsultasi($penerimaId));
+        try {
+            broadcast(new AktivitasKonsultasi($penerimaId, $konsultasi->id, 'pesan'));
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         return response()->json([
             'success' => true,
