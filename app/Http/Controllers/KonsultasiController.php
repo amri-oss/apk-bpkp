@@ -8,6 +8,7 @@ use App\Models\Konsultasi;
 use App\Models\Pesan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class KonsultasiController extends Controller
 {
@@ -46,10 +47,24 @@ class KonsultasiController extends Controller
     {
         $user = Auth::user();
 
-        abort_unless(
-            $konsultasi->audiens_id === $user->id || $konsultasi->konsultan_id === $user->id,
-            403
-        );
+        $isParticipant = $konsultasi->audiens_id === $user->id || $konsultasi->konsultan_id === $user->id;
+        $isAdmin = $user->role === 'admin';
+
+        abort_unless($isParticipant || $isAdmin, 403);
+
+        // Hanya admin yang boleh menghapus data dari database.
+        if ($isAdmin) {
+            $konsultasi->load('pesans');
+            foreach ($konsultasi->pesans as $pesan) {
+                if ($pesan->file_path) {
+                    Storage::disk('public')->delete($pesan->file_path);
+                }
+            }
+            $konsultasi->pesans()->delete();
+            $konsultasi->delete();
+
+            return redirect()->route('admin.pemantauan.index')->with('success', 'Konsultasi berhasil dihapus permanen dari database.');
+        }
 
         if ($konsultasi->audiens_id === $user->id) {
             $konsultasi->update(['disembunyikan_oleh_audiens' => true]);
@@ -57,11 +72,7 @@ class KonsultasiController extends Controller
             $konsultasi->update(['disembunyikan_oleh_konsultan' => true]);
         }
 
-        if ($konsultasi->disembunyikan_oleh_audiens && $konsultasi->disembunyikan_oleh_konsultan) {
-            $konsultasi->delete();
-        }
-
-        return back()->with('success', 'Konsultasi berhasil dihapus.');
+        return back()->with('success', 'Konsultasi disembunyikan dari daftar Anda. Data tetap tersimpan di sistem.');
     }
 
     public function terima(Request $request, Konsultasi $konsultasi)
@@ -72,7 +83,11 @@ class KonsultasiController extends Controller
 
         $konsultasi->update(['status' => 'berlangsung']);
 
-        broadcast(new AktivitasKonsultasi($konsultasi->audiens_id))->toOthers();
+        try {
+            broadcast(new AktivitasKonsultasi($konsultasi->audiens_id, $konsultasi->id, 'status'))->toOthers();
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         if ($request->wantsJson()) {
             return response()->json(['success' => true, 'message' => 'Permintaan konsultasi telah diterima.']);
@@ -88,12 +103,23 @@ class KonsultasiController extends Controller
 
         abort_unless($konsultasi->konsultan_id === $user->id, 403);
 
+        $validated = $request->validate([
+            'alasan_tolak' => 'required|string|max:1000',
+        ], [
+            'alasan_tolak.required' => 'Alasan penolakan wajib diisi.',
+        ]);
+
         $konsultasi->update([
             'status' => 'selesai',
+            'alasan_tolak' => $validated['alasan_tolak'],
             'disembunyikan_oleh_konsultan' => true,
         ]);
 
-        broadcast(new AktivitasKonsultasi($konsultasi->audiens_id))->toOthers();
+        try {
+            broadcast(new AktivitasKonsultasi($konsultasi->audiens_id, $konsultasi->id, 'status'))->toOthers();
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         if ($request->wantsJson()) {
             return response()->json(['success' => true, 'message' => 'Permintaan konsultasi telah ditolak.']);
@@ -114,6 +140,15 @@ class KonsultasiController extends Controller
 
         $konsultasi->update(['status' => 'selesai']);
 
+        $penerimaId = $user->id === $konsultasi->audiens_id
+            ? $konsultasi->konsultan_id
+            : $konsultasi->audiens_id;
+        try {
+            broadcast(new AktivitasKonsultasi($penerimaId, $konsultasi->id, 'status'));
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
         return back()->with('success', 'Konsultasi ditandai selesai.');
     }
 
@@ -125,7 +160,11 @@ class KonsultasiController extends Controller
 
         if ($belumDibaca->isNotEmpty()) {
             Pesan::whereIn('id', $belumDibaca->pluck('id'))->update(['dibaca_at' => now()]);
-            broadcast(new PesanDibaca($konsultasi->id, $userId))->toOthers();
+            try {
+                broadcast(new PesanDibaca($konsultasi->id, $userId))->toOthers();
+            } catch (\Throwable $e) {
+                report($e);
+            }
         }
     }
 }

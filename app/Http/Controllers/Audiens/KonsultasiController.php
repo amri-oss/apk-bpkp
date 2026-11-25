@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Audiens;
 
+use App\Events\AktivitasKonsultasi;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Konsultasi;
@@ -77,6 +78,12 @@ class KonsultasiController extends Controller
             'Mulai Konsultasi',
             Auth::user()->name . ' memulai konsultasi dengan ' . $konsultan->name
         );
+
+        try {
+            broadcast(new AktivitasKonsultasi($konsultan->id, $konsultasi->id, 'status'));
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         return redirect()->route('audiens.konsultasi-saya', $konsultasi->id);
     }

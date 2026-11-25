@@ -7,7 +7,17 @@
 
     <div class="py-12">
         <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
-            <p class="text-xs text-gray-400 mb-2 text-center">Mode pemantauan Admin (read-only)</p>
+            <div class="flex items-center justify-between mb-2">
+                <p class="text-xs text-gray-400 text-center">Mode pemantauan Admin (read-only)</p>
+                <form action="{{ route('konsultasi.destroy', $konsultasi->id) }}" method="POST"
+                      onsubmit="return confirm('Hapus permanen konsultasi ini dari database? Semua pesan dan file akan dihapus dan tidak bisa dikembalikan.')">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg font-medium">
+                        Hapus Permanen
+                    </button>
+                </form>
+            </div>
 
             <div class="bg-white shadow rounded-lg p-6 h-96 overflow-y-auto flex flex-col gap-3">
                 @forelse ($konsultasi->pesans as $pesan)
