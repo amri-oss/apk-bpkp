@@ -38,42 +38,58 @@
                                 $isSelected = $selected && $selected->id === $k->id;
                                 $pesanTerakhir = $k->pesans->last();
                             @endphp
-                            <a href="{{ route('konsultan.obrolan', $k->id) }}"
-                                class="konsultasi-item flex items-center gap-3 px-4 py-3.5 transition {{ $isSelected ? 'bg-blue-50/70 border-l-4 border-blue-600' : 'hover:bg-gray-50' }}"
+                            <div class="konsultasi-item group relative flex items-center {{ $isSelected ? 'bg-blue-50/70 border-l-4 border-blue-600' : 'hover:bg-gray-50' }}"
                                 data-nama="{{ strtolower($k->audiens->name) }}">
-                                
-                                {{-- Avatar --}}
-                                @if ($fotoAudiens)
-                                    <img src="{{ $fotoAudiens }}" alt="{{ $k->audiens->name }}"
-                                         class="w-11 h-11 shrink-0 rounded-full object-cover bg-gray-200 {{ $isSelected ? 'ring-2 ring-blue-500' : '' }}">
-                                @else
-                                    <div class="w-11 h-11 shrink-0 rounded-full {{ $isSelected ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-700' }} flex items-center justify-center font-bold text-sm">
-                                        {{ strtoupper(substr($k->audiens->name, 0, 1)) }}
-                                    </div>
-                                @endif
+                                <a href="{{ route('konsultan.obrolan', $k->id) }}"
+                                    class="flex items-center gap-3 px-4 py-3.5 transition flex-1 min-w-0">
 
-                                {{-- Informasi --}}
-                                <div class="min-w-0 flex-1">
-                                    <div class="flex items-center justify-between mb-0.5">
-                                        <p class="font-bold text-gray-900 text-sm truncate">{{ $k->audiens->name }}</p>
-                                        <span class="text-[11px] text-gray-400 shrink-0 font-medium ml-1">
-                                            {{ $pesanTerakhir ? $pesanTerakhir->created_at->format('H.i') : $k->created_at->format('H.i') }}
-                                        </span>
+                                    {{-- Avatar --}}
+                                    @if ($fotoAudiens)
+                                        <img src="{{ $fotoAudiens }}" alt="{{ $k->audiens->name }}"
+                                             class="w-11 h-11 shrink-0 rounded-full object-cover bg-gray-200 {{ $isSelected ? 'ring-2 ring-blue-500' : '' }}">
+                                    @else
+                                        <div class="w-11 h-11 shrink-0 rounded-full {{ $isSelected ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-700' }} flex items-center justify-center font-bold text-sm">
+                                            {{ strtoupper(substr($k->audiens->name, 0, 1)) }}
+                                        </div>
+                                    @endif
+
+                                    {{-- Informasi --}}
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-center justify-between mb-0.5">
+                                            <p class="font-bold text-gray-900 text-sm truncate">{{ $k->audiens->name }}</p>
+                                            <span class="text-[11px] text-gray-400 shrink-0 font-medium ml-1">
+                                                {{ $pesanTerakhir ? $pesanTerakhir->created_at->format('H.i') : $k->created_at->format('H.i') }}
+                                            </span>
+                                        </div>
+                                        <div class="flex items-center gap-1.5">
+                                            @if ($k->status === 'menunggu')
+                                                <span class="text-xs font-bold text-amber-600 shrink-0">Menunggu</span>
+                                            @elseif ($k->status === 'berlangsung')
+                                                <span class="text-xs font-bold text-emerald-600 shrink-0">Aktif</span>
+                                            @else
+                                                <span class="text-xs font-bold text-gray-500 shrink-0">Selesai</span>
+                                            @endif
+                                            <span class="text-xs text-gray-500 truncate flex-1">
+                                                {{ $pesanTerakhir?->isi_pesan ?? ($k->topik->nama_topik ?? $k->topik_lainnya ?? 'Belum ada pesan') }}
+                                            </span>
+                                        </div>
                                     </div>
-                                    <div class="flex items-center gap-1.5">
-                                        @if ($k->status === 'menunggu')
-                                            <span class="text-xs font-bold text-amber-600 shrink-0">Menunggu</span>
-                                        @elseif ($k->status === 'berlangsung')
-                                            <span class="text-xs font-bold text-emerald-600 shrink-0">Aktif</span>
-                                        @else
-                                            <span class="text-xs font-bold text-gray-500 shrink-0">Selesai</span>
-                                        @endif
-                                        <span class="text-xs text-gray-500 truncate flex-1">
-                                            {{ $pesanTerakhir?->isi_pesan ?? ($k->topik->nama_topik ?? $k->topik_lainnya ?? 'Belum ada pesan') }}
-                                        </span>
-                                    </div>
-                                </div>
-                            </a>
+                                </a>
+
+                                <form action="{{ route('konsultasi.destroy', $k->id) }}" method="POST"
+                                    onsubmit="return confirm('Sembunyikan konsultasi dengan {{ $k->audiens->name }} dari daftar Anda? Data chat tetap tersimpan di sistem.')"
+                                    class="shrink-0 pr-3">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit"
+                                        class="w-8 h-8 flex items-center justify-center rounded-full text-gray-300 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 focus:opacity-100 transition"
+                                        title="Sembunyikan konsultasi">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
                         @empty
                             <p class="text-gray-400 text-sm text-center p-6">Belum ada obrolan.</p>
                         @endforelse
@@ -111,6 +127,14 @@
                         item.style.display = item.dataset.nama.includes(kata) ? '' : 'none';
                     });
                 });
+            }
+
+            const userId = {{ auth()->id() }};
+            if (window.Echo) {
+                window.Echo.private(`user.${userId}`)
+                    .listen('.AktivitasKonsultasi', () => {
+                        window.location.reload();
+                    });
             }
         });
     </script>

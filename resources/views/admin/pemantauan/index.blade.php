@@ -72,10 +72,21 @@
                                     </span>
                                 </td>
                                 <td class="px-2 py-3">
-                                    <a href="{{ route('admin.pemantauan.show', $k->id) }}"
-                                       class="inline-block rounded-sm bg-[#0A84F5] px-6 py-1.5 text-xs text-white hover:bg-blue-700">
-                                        Lihat
-                                    </a>
+                                    <div class="flex items-center gap-2">
+                                        <a href="{{ route('admin.pemantauan.show', $k->id) }}"
+                                           class="inline-block rounded-sm bg-[#0A84F5] px-4 py-1.5 text-xs text-white hover:bg-blue-700">
+                                            Lihat
+                                        </a>
+                                        <form action="{{ route('konsultasi.destroy', $k->id) }}" method="POST"
+                                              onsubmit="return confirm('Hapus permanen konsultasi ini dari database? Semua pesan dan file akan dihapus dan tidak bisa dikembalikan.')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit"
+                                                class="inline-block rounded-sm bg-red-600 px-4 py-1.5 text-xs text-white hover:bg-red-700">
+                                                Hapus
+                                            </button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                         @empty

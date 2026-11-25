@@ -110,7 +110,7 @@
             <form
                 action="{{ route('konsultasi.destroy', $k->id) }}"
                 method="POST"
-                onsubmit="return confirm('Hapus konsultasi dengan {{ $lawanBicara->name ?? 'pengguna' }}? Semua chat di dalamnya juga akan terhapus.')">
+                onsubmit="return confirm('Sembunyikan konsultasi dengan {{ $lawanBicara->name ?? 'pengguna' }} dari daftar Anda? Data chat tetap tersimpan di sistem.')">
 
                 @csrf
                 @method('DELETE')
@@ -118,7 +118,7 @@
                 <button
                     type="submit"
                     class="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-gray-300 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition"
-                    title="Hapus konsultasi">
+                    title="Sembunyikan konsultasi">
 
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
