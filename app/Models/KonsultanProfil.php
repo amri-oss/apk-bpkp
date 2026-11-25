@@ -12,6 +12,7 @@ class KonsultanProfil extends Model
     protected $fillable = [
         'user_id',
         'kategori_id',
+        'jabatan',
         'bio',
         'foto_profil',
         'aktif',

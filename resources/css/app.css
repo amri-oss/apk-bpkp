@@ -1,3 +1,115 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+[x-cloak] { display: none !important; }
+
+@layer base {
+    :root {
+        --app-brand: #163b5c;
+        --app-brand-dark: #102f4c;
+        --app-accent: #315f88;
+        --app-ink: #172b45;
+        --app-muted: #64748b;
+        --app-canvas: #f3f6fa;
+        --app-surface: #ffffff;
+        --app-border: #dce4ee;
+    }
+
+    body {
+        color: var(--app-ink);
+        background: var(--app-canvas);
+        font-family: Figtree, ui-sans-serif, system-ui, sans-serif;
+    }
+}
+
+@layer components {
+    /* Shared page-heading surface and typography across every menu. */
+    .page-banner {
+        background: var(--app-surface) !important;
+        color: var(--app-ink) !important;
+        border: 1px solid var(--app-border);
+        border-left: 4px solid var(--app-brand);
+        border-radius: 14px !important;
+        box-shadow: 0 5px 18px rgba(20, 42, 66, .05) !important;
+    }
+    .page-banner h1,
+    .page-banner h2,
+    .page-title {
+        color: var(--app-ink) !important;
+        font-family: Figtree, ui-sans-serif, system-ui, sans-serif !important;
+        font-size: 1.5rem !important;
+        font-weight: 700 !important;
+        line-height: 2rem !important;
+        letter-spacing: -0.02em;
+    }
+    .page-banner p { color: var(--app-muted) !important; font-size: .875rem !important; line-height: 1.25rem !important; }
+    .page-banner span, .page-banner div { color: #475569; }
+
+    /* Keep the chat composer visible beneath the shared navigation/header. */
+    .chat-layout {
+        height: 100vh;
+        height: 100dvh;
+        min-height: 0;
+        overflow: hidden;
+    }
+    .chat-main {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
+    }
+    .chat-page {
+        display: flex;
+        flex: 1 1 0%;
+        flex-direction: column;
+        height: 0;
+        min-height: 0;
+        overflow: hidden;
+        padding-block: .75rem;
+    }
+    .chat-page-container,
+    .chat-page-grid {
+        height: 100%;
+        min-height: 0;
+    }
+    .chat-page-grid {
+        grid-template-rows: minmax(0, 1fr);
+    }
+    .chat-panel {
+        height: 100%;
+        min-height: 0;
+    }
+    .chat-panel > :not(#chat-box):not(.flex-1) { flex-shrink: 0; }
+
+    main table { border-collapse: separate; border-spacing: 0; }
+    main table thead tr { background: #eaf0f7 !important; color: #334a63 !important; }
+    main table thead th {
+        font-size: .7rem;
+        font-weight: 700;
+        letter-spacing: .055em;
+        text-transform: uppercase;
+        border-bottom: 1px solid #dce4ee;
+    }
+    main table tbody tr { transition: background-color .15s ease; }
+    main table tbody tr:hover { background: #f7f9fc; }
+
+    main input:not([type="checkbox"]):not([type="radio"]), main select, main textarea {
+        border-color: #cbd5e1;
+        border-radius: 10px;
+    }
+    main input:focus, main select:focus, main textarea:focus {
+        border-color: var(--app-accent);
+        --tw-ring-color: #315f8830;
+    }
+}
+
+header h2,
+header .page-title {
+    color: var(--app-ink) !important;
+    font-family: Figtree, ui-sans-serif, system-ui, sans-serif !important;
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+    line-height: 2rem !important;
+    letter-spacing: -0.02em;
+}

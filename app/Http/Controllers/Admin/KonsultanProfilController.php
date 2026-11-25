@@ -50,6 +50,7 @@ class KonsultanProfilController extends Controller
             'email'       => 'required|email|max:255|unique:users,email',
             'password'    => 'required|string|min:8',
             'kategori_id' => 'required|exists:kategori_konsultans,id',
+            'jabatan'     => 'required|string|max:255',
             'bio'         => 'nullable|string',
             'foto_profil' => 'nullable|image|max:2048',
         ]);
@@ -74,6 +75,7 @@ class KonsultanProfilController extends Controller
             KonsultanProfil::create([
                 'user_id'     => $user->id,
                 'kategori_id' => $validated['kategori_id'],
+                'jabatan'     => $validated['jabatan'],
                 'bio'         => $validated['bio'] ?? null,
                 'foto_profil' => $fotoPath,
                 'aktif'       => true,
@@ -93,21 +95,36 @@ class KonsultanProfilController extends Controller
     public function update(Request $request, KonsultanProfil $konsultanProfil)
     {
         $validated = $request->validate([
+            'name'        => 'required|string|max:255',
+            'email'       => 'required|email|max:255|unique:users,email,' . $konsultanProfil->user_id,
             'kategori_id' => 'required|exists:kategori_konsultans,id',
+            'jabatan'     => 'required|string|max:255',
             'bio'         => 'nullable|string',
             'foto_profil' => 'nullable|image|max:2048',
             'aktif'       => 'boolean',
         ]);
 
-        if ($request->hasFile('foto_profil')) {
-            // Hapus foto lama biar storage nggak numpuk
-            if ($konsultanProfil->foto_profil) {
-                Storage::disk('public')->delete($konsultanProfil->foto_profil);
-            }
-            $validated['foto_profil'] = $request->file('foto_profil')->store('foto_konsultan', 'public');
-        }
+        DB::transaction(function () use ($request, $validated, $konsultanProfil) {
+            $user = $konsultanProfil->user;
+            $user->forceFill([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+            ])->save();
 
-        $konsultanProfil->update($validated);
+            unset($validated['name'], $validated['email']);
+            if ($request->hasFile('foto_profil')) {
+                $fotoPath = $request->file('foto_profil')->store('foto_konsultan', 'public');
+                foreach (array_unique([$konsultanProfil->foto_profil, $user->foto_profil]) as $fotoLama) {
+                    if ($fotoLama && $fotoLama !== $fotoPath) {
+                        Storage::disk('public')->delete($fotoLama);
+                    }
+                }
+                $validated['foto_profil'] = $fotoPath;
+                $user->forceFill(['foto_profil' => $fotoPath])->save();
+            }
+
+            $konsultanProfil->update($validated);
+        });
 
         return redirect()->route('admin.konsultan-profil.index')
             ->with('success', 'Profil konsultan berhasil diperbarui.');
@@ -115,11 +132,11 @@ class KonsultanProfilController extends Controller
 
     public function destroy(KonsultanProfil $konsultanProfil)
     {
-        if ($konsultanProfil->foto_profil) {
-            Storage::disk('public')->delete($konsultanProfil->foto_profil);
+        $user = $konsultanProfil->user;
+        foreach (array_unique([$konsultanProfil->foto_profil, $user?->foto_profil]) as $foto) {
+            if ($foto) Storage::disk('public')->delete($foto);
         }
-
-        $konsultanProfil->delete();
+        $user?->delete(); // Profil dan akun harus hilang bersama dari kedua menu.
 
         return redirect()->route('admin.konsultan-profil.index')
             ->with('success', 'Profil konsultan berhasil dihapus.');

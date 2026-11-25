@@ -36,19 +36,21 @@
 <style>
     .nav-biru-item {
         display: block;
-        padding: 14px 24px;
-        color: #ffffff;
-        font-size: 13px;
-        font-weight: 700;
+        padding: 15px 18px;
+        color: #dce6f0;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: .015em;
         text-decoration: none;
         white-space: nowrap;
-        transition: background 0.15s ease;
+        border-bottom: 2px solid transparent;
+        transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
     }
-    .nav-biru-item:hover { background: #3F86D3; }
-    .nav-biru-item.aktif { background: #0A8CFF; }
+    .nav-biru-item:hover { background: rgba(255,255,255,.06); color: #ffffff; }
+    .nav-biru-item.aktif { background: rgba(255,255,255,.07); color: #ffffff; border-bottom-color: var(--app-accent); }
 </style>
 
-<nav x-data="{ open: false }" class="bg-white">
+<nav x-data="{ open: false }" class="sticky top-0 z-50 bg-white border-b border-slate-200">
 
     {{-- Baris atas: logo, judul, lonceng, avatar --}}
     <div style="max-width: 80rem; margin: 0 auto; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between;">
@@ -124,7 +126,7 @@
     </div>
 
     {{-- Bar biru menu (desktop) --}}
-    <div class="hidden sm:block" style="background: #1D6BC0; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
+    <div class="hidden sm:block" style="background: var(--app-brand); box-shadow: 0 2px 6px rgba(15,23,42,0.12);">
         <div style="max-width: 80rem; margin: 0 auto; padding: 0 24px; display: flex; flex-wrap: wrap;">
             @foreach ($menuItems as $item)
                 <a href="{{ route($item['route']) }}"
@@ -136,7 +138,7 @@
     </div>
 
     {{-- Menu mobile --}}
-    <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden" style="background: #1D6BC0;">
+    <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden" style="background: var(--app-brand);">
         @foreach ($menuItems as $item)
             <a href="{{ route($item['route']) }}"
                class="nav-biru-item {{ request()->routeIs($item['active']) ? 'aktif' : '' }}">

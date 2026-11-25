@@ -29,6 +29,17 @@ class PesanController extends Controller
             ], 403);
         }
 
+        if ($konsultasi->status === 'menunggu') {
+            $pesanTunggu = $user->id === $konsultasi->konsultan_id
+                ? 'Harap terima permintaan konsultasi terlebih dahulu sebelum membalas.'
+                : 'Permintaan konsultasi Anda masih menunggu konfirmasi dari konsultan.';
+
+            return response()->json([
+                'success' => false,
+                'message' => $pesanTunggu,
+            ], 403);
+        }
+
         $validated = $request->validate([
             'isi_pesan' => 'nullable|string|max:2000',
             'balas_ke_id' => 'nullable|exists:pesans,id',
@@ -65,10 +76,6 @@ class PesanController extends Controller
 
         $updateData = [];
 
-        if ($konsultasi->status === 'menunggu') {
-            $updateData['status'] = 'berlangsung';
-        }
-
         if ($user->id === $konsultasi->audiens_id && $konsultasi->disembunyikan_oleh_konsultan) {
             $updateData['disembunyikan_oleh_konsultan'] = false;
         }
@@ -83,10 +90,18 @@ class PesanController extends Controller
 
         ActivityLog::catat($user->id, 'Kirim Pesan', $user->name . ' mengirim pesan di konsultasi #' . $konsultasi->id);
 
-        broadcast(new PesanDikirim($pesan))->toOthers();
+        try {
+            broadcast(new PesanDikirim($pesan))->toOthers();
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         $penerimaId = $user->id === $konsultasi->audiens_id ? $konsultasi->konsultan_id : $konsultasi->audiens_id;
-        broadcast(new AktivitasKonsultasi($penerimaId));
+        try {
+            broadcast(new AktivitasKonsultasi($penerimaId, $konsultasi->id, 'pesan'));
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         return response()->json([
             'success' => true,
