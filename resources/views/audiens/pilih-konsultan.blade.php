@@ -55,8 +55,8 @@
                                 <div class="w-full max-w-[132px] sm:max-w-[150px] mb-3">
                                     @if ($fotoKonsultan)
                                         <img src="{{ $fotoKonsultan }}" alt="{{ $kp->user->name }}"
-                                            style="width:100%;aspect-ratio:1/1;object-fit:cover;"
-                                            class="rounded-lg"
+                                            style="width:100%;aspect-ratio:1/1;object-fit:contain;object-position:center;"
+                                            class="rounded-lg bg-gray-100"
                                             onerror="this.onerror=null;this.style.display='none';this.nextElementSibling.classList.remove('hidden');this.nextElementSibling.classList.add('flex');">
                                         <div style="width:100%;aspect-ratio:1/1;"
                                             class="hidden rounded-lg bg-gray-100 items-center justify-center text-gray-400 font-semibold text-2xl">
