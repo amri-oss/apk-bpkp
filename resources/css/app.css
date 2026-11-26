@@ -63,21 +63,21 @@
         display: flex;
         flex: 1 1 0%;
         flex-direction: column;
+        height: 0;
         min-height: 0;
         overflow: hidden;
         padding-block: 0;
     }
-    @media (min-width: 1024px) {
-        .chat-page { height: 0; }
-    }
+    /* Composer must always sit at the very bottom, on mobile too. */
     @media (max-width: 1023.98px) {
-        .chat-layout { height: auto; min-height: 100dvh; overflow: visible; }
-        .chat-main { overflow: visible; }
-        .chat-page { height: auto; min-height: 0; overflow: visible; padding-block: 0; }
-        .chat-page-container, .chat-page-grid { height: auto; min-height: 0; }
-        .chat-panel { height: auto; min-height: 0; }
-        .chat-page-grid { grid-template-rows: none; }
-        .chat-page .chat-panel { min-height: calc(100dvh - 140px); }
+        .chat-layout { height: 100vh; height: 100dvh; min-height: 0; overflow: hidden; }
+        .chat-main { overflow: hidden; }
+        .chat-page { height: 0; flex: 1 1 0%; overflow: hidden; }
+        .chat-page-container, .chat-page-grid, .chat-panel { height: 100%; min-height: 0; }
+        .chat-page-grid { grid-template-rows: minmax(0, 1fr); }
+        .wa-shell { border-radius: 0; }
+        .wa-input-bar { padding-bottom: calc(.625rem + env(safe-area-inset-bottom, 0px)) !important; }
+        .wa-sidebar { padding-bottom: env(safe-area-inset-bottom, 0px); }
     }
     .chat-page-container, .chat-page-grid { height: 100%; min-height: 0; }
     .chat-page-grid { grid-template-rows: minmax(0, 1fr); }
@@ -176,6 +176,50 @@
         background: #ffffff;
         color: #54656f;
         border: 1px solid #e9edef;
+    }
+
+    /* Mobile: "Detail & Konfirmasi" konsultan tampil sebagai pop-up */
+    @media (max-width: 1023.98px) {
+        .detail-panel {
+            position: fixed;
+            inset: 0;
+            z-index: 70;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            background: rgba(15, 23, 42, .55);
+            padding: 0;
+        }
+        .detail-panel.is-open { display: flex; }
+        .detail-body {
+            width: 100%;
+            max-height: 92dvh;
+            overflow-y: auto;
+            background: #ffffff;
+            border-radius: 1.25rem 1.25rem 0 0;
+            padding: 1rem 1rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
+            box-shadow: 0 -10px 30px rgba(15, 23, 42, .18);
+            animation: detailSheetFade .18s ease-out;
+        }
+        .detail-panel .detail-card {
+            border: 0;
+            box-shadow: none;
+            border-radius: 0;
+            padding: 0;
+        }
+        .detail-panel .detail-sheet-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .75rem;
+            margin-bottom: .75rem;
+            padding-bottom: .75rem;
+            border-bottom: 1px solid #e9edef;
+        }
+    }
+    @keyframes detailSheetFade {
+        from { opacity: 0; }
+        to { opacity: 1; }
     }
 
     main table { border-collapse: separate; border-spacing: 0; }

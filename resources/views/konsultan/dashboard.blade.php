@@ -111,9 +111,19 @@
                     </div>
                 </div>
 
-                {{-- Detail permintaan & Aksi Konfirmasi (Kanan) --}}
-                <div class="lg:sticky lg:top-8">
-                    <h3 class="font-bold text-gray-800 text-base mb-3">Detail & Konfirmasi</h3>
+                {{-- Detail permintaan & Aksi Konfirmasi (Kanan di desktop, pop-up di mobile) --}}
+                <div class="detail-panel lg:sticky lg:top-8" id="detail-panel">
+                    <div class="detail-body">
+                        <div class="detail-sheet-title mb-3">
+                            <h3 class="font-bold text-gray-800 text-base">Detail &amp; Konfirmasi</h3>
+                            <button type="button" onclick="tutupDetail()"
+                                class="lg:hidden inline-flex items-center justify-center w-9 h-9 rounded-full text-gray-500 hover:bg-gray-100 active:bg-gray-200 transition"
+                                aria-label="Tutup detail">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
 
                     @if ($konsultasis->isNotEmpty())
                         <div id="detail-container">
@@ -249,9 +259,10 @@
                         </div>
                     @else
                         <div class="bg-white rounded-2xl border border-gray-200 p-6 text-center text-gray-400 text-sm">
-                            Pilih salah satu permintaan di sebelah kiri untuk melihat detail.
+                            Pilih salah satu permintaan untuk melihat detail.
                         </div>
                     @endif
+                    </div>
                 </div>
 
             </div>
@@ -356,9 +367,38 @@
                     card.classList.add('hidden');
                 }
             });
+
+            // Di mobile, detail ditampilkan sebagai pop-up
+            if (window.matchMedia('(max-width: 1023.98px)').matches) {
+                bukaDetail();
+            }
+        }
+
+        function bukaDetail() {
+            const panel = document.getElementById('detail-panel');
+            if (!panel) return;
+            panel.classList.add('is-open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function tutupDetail() {
+            const panel = document.getElementById('detail-panel');
+            if (!panel) return;
+            panel.classList.remove('is-open');
+            document.body.style.overflow = '';
         }
 
         document.addEventListener('DOMContentLoaded', function () {
+            const panel = document.getElementById('detail-panel');
+            if (panel) {
+                panel.addEventListener('click', function (e) {
+                    if (e.target === panel) tutupDetail();
+                });
+            }
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') tutupDetail();
+            });
+
             const userId = {{ auth()->id() }};
 
             if (window.Echo) {
