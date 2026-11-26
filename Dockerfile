@@ -49,6 +49,8 @@ RUN composer install \
     --optimize-autoloader \
     --no-interaction
 
+RUN php artisan storage:link
+
 # Frontend assets
 COPY --from=frontend /app/public/build ./public/build
 
