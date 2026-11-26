@@ -50,7 +50,7 @@
     .nav-biru-item.aktif { background: rgba(255,255,255,.07); color: #ffffff; border-bottom-color: var(--app-accent); }
 </style>
 
-<nav x-data="{ open: false }" class="sticky top-0 z-50 bg-white border-b border-slate-200">
+<nav x-data="{ open: false }" @click.outside="open = false" @keydown.escape.window="open = false" class="sticky top-0 z-50 bg-white border-b border-slate-200">
 
     {{-- Baris atas: logo, judul, lonceng, avatar --}}
     <div style="max-width: 80rem; margin: 0 auto; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between;">
@@ -138,7 +138,10 @@
     </div>
 
     {{-- Menu mobile --}}
-    <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden" style="background: var(--app-brand);">
+    <div x-cloak
+         :class="{'block': open, 'hidden': ! open}"
+         class="hidden sm:hidden absolute left-0 right-0 top-full shadow-xl border-t border-white/10"
+         style="background: var(--app-brand); max-height: calc(100dvh - 74px); overflow-y: auto;">
         @foreach ($menuItems as $item)
             <a href="{{ route($item['route']) }}"
                class="nav-biru-item {{ request()->routeIs($item['active']) ? 'aktif' : '' }}">

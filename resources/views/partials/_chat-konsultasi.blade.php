@@ -1,76 +1,107 @@
-<div class="chat-panel bg-white flex flex-col h-full w-full overflow-hidden" style="display: flex; flex-direction: column; height: 100%; min-height: 0;">
+<div class="chat-panel wa-main flex flex-col h-full w-full overflow-hidden" style="display: flex; flex-direction: column; height: 100%; min-height: 0;">
     @php
         $audiensMenungguPersetujuan = auth()->id() === $konsultasi->audiens_id
             && $konsultasi->status === 'menunggu';
         $konsultanBelumKonfirmasi = auth()->id() === $konsultasi->konsultan_id
             && $konsultasi->status === 'menunggu';
+        $lawanNama = auth()->user()->id === $konsultasi->audiens_id ? $konsultasi->konsultan->name : $konsultasi->audiens->name;
+        $lawanInisial = strtoupper(substr($lawanNama, 0, 1));
+        $statusLabel = match($konsultasi->status) {
+            'menunggu' => 'Menunggu',
+            'berlangsung' => 'Aktif',
+            'selesai' => 'Selesai',
+            default => ucfirst($konsultasi->status),
+        };
+        $statusColor = match($konsultasi->status) {
+            'berlangsung' => 'text-[#00a884]',
+            'menunggu' => 'text-[#b45309]',
+            'selesai' => 'text-[#667781]',
+            default => 'text-[#667781]',
+        };
     @endphp
 
-    <div class="flex justify-between items-center px-5 py-3 border-b border-gray-100">
-        <div class="flex items-center gap-3">
-            @if ($showBack ?? false)
-                <a href="{{ auth()->user()->role === 'konsultan' ? route('konsultan.obrolan') : route('audiens.konsultasi-saya') }}" class="sm:hidden text-sm font-medium text-blue-600 hover:text-blue-800">
-                    ← Daftar
-                </a>
-            @endif
-            <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-semibold">
-                {{ strtoupper(substr(auth()->user()->id === $konsultasi->audiens_id ? $konsultasi->konsultan->name : $konsultasi->audiens->name, 0, 1)) }}
-            </div>
-            <div>
-                <div class="flex items-center gap-2 flex-wrap">
-                    <h2 class="font-semibold text-lg text-gray-800 leading-tight">
-                        {{ auth()->user()->id === $konsultasi->audiens_id ? $konsultasi->konsultan->name : $konsultasi->audiens->name }}
-                    </h2>
-                    @if ($konsultasi->topik || $konsultasi->topik_lainnya)
-                        <span class="text-[11px] font-medium bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full whitespace-nowrap">
-                            {{ $konsultasi->topik->nama_topik ?? $konsultasi->topik_lainnya }}
-                        </span>
-                    @endif
-                </div>
-                @if ($konsultasi->status === 'selesai')
-                    <span class="text-xs font-medium text-green-600">Selesai</span>
+    <div class="wa-main-header px-4 sm:px-5 py-2.5 sm:py-3 shrink-0">
+        <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+                @if ($showBack ?? false)
+                    <a href="{{ auth()->user()->role === 'konsultan' ? route('konsultan.obrolan') : route('audiens.konsultasi-saya') }}"
+                       class="sm:hidden shrink-0 inline-flex items-center justify-center w-9 h-9 -ml-1 rounded-full text-[#54656f] hover:bg-[#e9edef] transition"
+                       aria-label="Kembali ke daftar">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </a>
                 @endif
+                <div class="w-10 h-10 shrink-0 rounded-full bg-[#e9edef] text-[#374151] flex items-center justify-center font-semibold">
+                    {{ $lawanInisial }}
+                </div>
+                <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <h2 class="wa-title font-medium text-[15px] sm:text-base leading-tight truncate">{{ $lawanNama }}</h2>
+                        @if ($konsultasi->topik || $konsultasi->topik_lainnya)
+                            <span class="hidden sm:inline-flex text-[11px] font-medium bg-white text-[#667781] px-2 py-0.5 rounded-full whitespace-nowrap max-w-[220px] truncate border border-[#e9edef]">
+                                {{ $konsultasi->topik->nama_topik ?? $konsultasi->topik_lainnya }}
+                            </span>
+                        @endif
+                    </div>
+                    <p class="text-xs {{ $statusColor }} font-medium mt-0.5">{{ $statusLabel }}</p>
+                </div>
             </div>
-        </div>
-        <div class="flex items-center gap-2">
-            @if (!in_array($konsultasi->status, ['menunggu', 'selesai'], true))
-                <form action="{{ route('konsultasi.selesai', $konsultasi->id) }}" method="POST"
-                      onsubmit="return confirm('Tandai konsultasi ini sebagai selesai?')">
-                    @csrf
-                    @method('PATCH')
-                    <button type="submit" class="text-xs font-medium text-green-600 hover:bg-green-50 px-3 py-1.5 rounded-lg transition">
-                        Tandai Selesai
+
+            @if (!in_array($konsultasi->status, ['menunggu'], true))
+                <div class="hidden sm:flex items-center gap-1 shrink-0">
+                    @if ($konsultasi->status !== 'selesai')
+                        <form action="{{ route('konsultasi.selesai', $konsultasi->id) }}" method="POST"
+                              onsubmit="return confirm('Tandai konsultasi ini sebagai selesai?')">
+                            @csrf
+                            @method('PATCH')
+                            <button type="submit" class="wa-action-btn wa-action-btn-success">Tandai Selesai</button>
+                        </form>
+                    @endif
+                    <button type="button" data-hapus-semua class="wa-action-btn wa-action-btn-danger inline-flex items-center gap-1.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Hapus Semua
                     </button>
-                </form>
+                </div>
             @endif
-            @if ($konsultasi->status !== 'menunggu')
-                <button id="btn-hapus-semua"
-                    class="flex items-center gap-1.5 text-red-500 text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-red-50 transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
+        </div>
+
+        @if ($konsultasi->topik || $konsultasi->topik_lainnya)
+            <div class="sm:hidden mt-2">
+                <span class="inline-flex text-[11px] font-medium bg-white text-[#667781] px-2 py-0.5 rounded-full max-w-full truncate border border-[#e9edef]">
+                    {{ $konsultasi->topik->nama_topik ?? $konsultasi->topik_lainnya }}
+                </span>
+            </div>
+        @endif
+
+        @if (!in_array($konsultasi->status, ['menunggu'], true))
+            <div class="flex sm:hidden items-center gap-2 mt-2.5 pt-2.5 border-t border-[#e9edef]">
+                @if ($konsultasi->status !== 'selesai')
+                    <form action="{{ route('konsultasi.selesai', $konsultasi->id) }}" method="POST" class="flex-1"
+                          onsubmit="return confirm('Tandai konsultasi ini sebagai selesai?')">
+                        @csrf
+                        @method('PATCH')
+                        <button type="submit" class="w-full inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-[#008069] bg-[#dcfce7] hover:bg-[#bbf7d0] px-3 py-2 rounded-lg transition">
+                            Tandai Selesai
+                        </button>
+                    </form>
+                @endif
+                <button type="button" data-hapus-semua
+                    class="{{ $konsultasi->status !== 'selesai' ? 'flex-1' : 'w-full' }} inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-[#f87171] bg-[#fee2e2] hover:bg-[#fecaca] px-3 py-2 rounded-lg transition">
                     Hapus Semua
                 </button>
-            @endif
-        </div>
+            </div>
+        @endif
     </div>
 
-    <div class="px-4 py-2 bg-blue-50/60 border-b border-blue-100">
-        <p class="text-xs text-blue-600 text-center">
-            Geser kanan (atau klik ikon ↩ di laptop) untuk membalas &middot; klik kanan/tekan-tahan pesan sendiri untuk menghapus
-        </p>
-    </div>
+    <div class="wa-thread flex-1 overflow-y-auto px-3 sm:px-4 lg:px-6 py-3 flex flex-col gap-2 min-h-0" id="chat-box" style="flex: 1 1 0%; min-height: 0;">
 
-    <div class="flex-1 overflow-y-auto p-4 sm:p-5 flex flex-col gap-3 bg-gray-50 min-h-0" id="chat-box" style="flex: 1 1 0%; min-height: 0;">
-
-        {{-- Kartu topik --}}
         @if ($konsultasi->topik || $konsultasi->topik_lainnya)
-            <div class="flex justify-center mb-2">
-                <div class="flex items-center gap-1.5 bg-white border border-gray-200 shadow-sm rounded-full px-4 py-1.5">
-                    <span class="text-sm">📌</span>
-                    <span class="text-xs font-medium text-gray-600">
-                        Topik: {{ $konsultasi->topik->nama_topik ?? $konsultasi->topik_lainnya }}
-                    </span>
+            <div class="flex justify-center mb-1">
+                <div class="wa-topic-chip rounded-lg px-3 py-1.5 text-[11px] sm:text-xs font-medium shadow-sm">
+                    Topik: {{ $konsultasi->topik->nama_topik ?? $konsultasi->topik_lainnya }}
                 </div>
             </div>
         @endif
@@ -84,18 +115,18 @@
                 data-milik-sendiri="{{ $pesan->pengirim_id === auth()->id() ? '1' : '0' }}">
 
                 @if (!$audiensMenungguPersetujuan && !$konsultanBelumKonfirmasi && $konsultasi->status !== 'selesai')
-                    <button class="btn-reply shrink-0 w-7 h-7 flex items-center justify-center rounded-full text-gray-400 opacity-0 group-hover:opacity-100 hover:text-blue-600 hover:bg-white transition text-base">
+                    <button class="btn-reply shrink-0 w-7 h-7 flex items-center justify-center rounded-full text-[#667781] opacity-0 group-hover:opacity-100 hover:text-[#111b21] hover:bg-[#e9edef] transition text-base">
                         ↩
                     </button>
                 @endif
 
-                <div class="pesan-bubble max-w-xs sm:max-w-sm px-4 py-2.5 shadow-sm select-none {{ $pesan->pengirim_id === auth()->id() ? 'bg-blue-600 text-white rounded-2xl rounded-br-sm' : 'bg-white text-gray-800 border border-gray-200 rounded-2xl rounded-bl-sm' }}"
+                <div class="pesan-bubble max-w-[88%] sm:max-w-[72%] lg:max-w-[60%] px-3 py-2 shadow-sm select-none {{ $pesan->pengirim_id === auth()->id() ? 'wa-bubble-out' : 'wa-bubble-in' }}"
                     style="-webkit-touch-callout: none; -webkit-user-select: none; touch-action: pan-y;">
 
                     @if ($pesan->balasKe)
-                        <div class="mb-1.5 pl-2 py-1 border-l-2 rounded {{ $pesan->pengirim_id === auth()->id() ? 'border-blue-300 bg-blue-500/40' : 'border-gray-300 bg-gray-50' }} text-xs opacity-90">
-                            <p class="font-semibold">{{ $pesan->balasKe->pengirim->name }}</p>
-                            <p class="truncate">{{ $pesan->balasKe->isi_pesan }}</p>
+                        <div class="mb-1.5 pl-2 py-1 border-l-2 rounded {{ $pesan->pengirim_id === auth()->id() ? 'border-[#00a884]/40 bg-[#d9fdd3]' : 'border-[#667781]/30 bg-[#f0f2f5]' }} text-xs">
+                            <p class="font-semibold {{ $pesan->pengirim_id === auth()->id() ? 'text-[#008069]' : 'text-[#008069]' }}">{{ $pesan->balasKe->pengirim->name }}</p>
+                            <p class="truncate text-[#374151]/90">{{ $pesan->balasKe->isi_pesan }}</p>
                         </div>
                     @endif
 
@@ -107,20 +138,20 @@
                             </a>
                         @else
                             <a href="{{ asset('storage/' . $pesan->file_path) }}" target="_blank"
-                                class="flex items-center gap-2 mb-1.5 px-3 py-2 rounded-lg {{ $pesan->pengirim_id === auth()->id() ? 'bg-blue-700/60' : 'bg-gray-100' }}">
+                                class="flex items-center gap-2 mb-1.5 px-3 py-2 rounded-lg {{ $pesan->pengirim_id === auth()->id() ? 'bg-[#d9fdd3]' : 'bg-[#f0f2f5]' }}">
                                 <span>📎</span>
-                                <span class="text-xs truncate">{{ $pesan->file_nama }}</span>
+                                <span class="text-xs truncate text-[#111b21]">{{ $pesan->file_nama }}</span>
                             </a>
                         @endif
                     @endif
 
                     @if ($pesan->isi_pesan)
-                        <p class="text-sm leading-relaxed pesan-isi">{{ $pesan->isi_pesan }}</p>
+                        <p class="text-[14.5px] leading-relaxed pesan-isi whitespace-pre-wrap break-words">{{ $pesan->isi_pesan }}</p>
                     @endif
-                    <p class="text-[10px] opacity-70 mt-1 text-right">
+                    <p class="text-[11px] wa-bubble-meta mt-1 text-right">
                         {{ $pesan->created_at->format('H:i') }}
                         @if ($pesan->pengirim_id === auth()->id())
-                            <span class="status-baca">{{ $pesan->dibaca_at ? ' · Dibaca' : '' }}</span>
+                            <span class="status-baca {{ $pesan->dibaca_at ? 'text-[#53bdeb]' : '' }}">{{ $pesan->dibaca_at ? ' ✓✓' : ' ✓' }}</span>
                         @endif
                     </p>
                 </div>
@@ -129,32 +160,32 @@
     </div>
 
     @if ($audiensMenungguPersetujuan)
-        <div class="border-t border-blue-100 bg-blue-50 px-5 py-4 text-center shrink-0" style="flex-shrink: 0;">
-            <p class="text-sm font-semibold text-blue-800">Menunggu persetujuan konsultan</p>
-            <p class="mt-1 text-xs text-blue-700">Deskripsi konsultasi Anda sudah dikirim. Kolom pesan akan tersedia setelah konsultasi diterima.</p>
+        <div class="border-t border-[#e9edef] bg-[#f0f2f5] px-5 py-4 text-center shrink-0" style="flex-shrink: 0;">
+            <p class="text-sm font-semibold text-[#111b21]">Menunggu persetujuan konsultan</p>
+            <p class="mt-1 text-xs text-[#667781]">Deskripsi konsultasi Anda sudah dikirim. Kolom pesan akan tersedia setelah konsultasi diterima.</p>
         </div>
     @elseif ($konsultanBelumKonfirmasi)
-        <div class="border-t border-amber-200 bg-amber-50 px-5 py-4 shrink-0" style="flex-shrink: 0;" x-data="{ tolakOpen: false, alasanTolak: '' }">
+        <div class="border-t border-[#e9edef] bg-[#f0f2f5] px-5 py-4 shrink-0" style="flex-shrink: 0;" x-data="{ tolakOpen: false, alasanTolak: '' }">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                    <p class="text-sm font-semibold text-amber-900 flex items-center gap-1.5">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <p class="text-sm font-semibold text-[#111b21] flex items-center gap-1.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-[#b45309]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                         </svg>
                         Konfirmasi Permintaan Konsultasi
                     </p>
-                    <p class="mt-0.5 text-xs text-amber-700">Anda hanya dapat melihat pesan permintaan ini. Silakan konfirmasi untuk mulai merespon dan membalas pesan.</p>
+                    <p class="mt-0.5 text-xs text-[#667781]">Anda hanya dapat melihat pesan permintaan ini. Silakan konfirmasi untuk mulai merespon dan membalas pesan.</p>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
                     <button type="button" @click="tolakOpen = true; $nextTick(() => $refs.alasanTolak.focus())"
-                        class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg shadow-sm transition">
+                        class="px-4 py-2 bg-[#fee2e2] hover:bg-[#fecaca] text-[#f87171] text-xs font-semibold rounded-lg transition">
                         Tolak
                     </button>
                     <form action="{{ route('konsultasi.terima', $konsultasi->id) }}" method="POST">
                         @csrf
                         @method('PATCH')
                         <button type="submit"
-                            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm transition">
+                            class="px-4 py-2 bg-[#00a884] hover:bg-[#008069] text-white text-xs font-semibold rounded-lg transition">
                             Terima Permintaan
                         </button>
                     </form>
@@ -183,48 +214,50 @@
         </div>
     @else
         @if ($konsultasi->status === 'selesai')
-            <div class="px-4 pt-2.5 pb-2 bg-white border-t border-gray-100 shrink-0" style="flex-shrink: 0;">
-                <div class="flex items-center justify-center gap-2 py-2 mb-2 bg-gray-100 rounded-xl text-sm text-gray-500">
+            <div class="px-4 pt-2.5 pb-2 wa-input-bar shrink-0" style="flex-shrink: 0;">
+                <div class="flex items-center justify-center gap-2 py-2 mb-2 bg-white border border-[#e9edef] rounded-xl text-sm text-[#667781]">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                     Konsultasi ini sudah selesai. Anda tidak dapat mengirim pesan lagi.
                 </div>
                 @if ($konsultasi->alasan_tolak)
-                    <div class="mb-2 bg-red-50 border border-red-200 text-red-800 rounded-xl px-3 py-2 text-sm">
+                    <div class="mb-2 bg-[#fee2e2] border border-[#fca5a5] text-[#f87171] rounded-xl px-3 py-2 text-sm">
                         <span class="font-semibold">Alasan penolakan:</span> {{ $konsultasi->alasan_tolak }}
                     </div>
                 @endif
             </div>
         @endif
 
-        <div class="px-4 pt-2.5 pb-2.5 bg-white border-t border-gray-200 shrink-0" style="flex-shrink: 0;">
-            <div id="file-preview" class="hidden mb-2 bg-green-50 border-l-4 border-green-500 px-3 py-2 rounded-lg flex justify-between items-center">
-                <p class="text-xs text-gray-600 truncate" id="file-preview-nama"></p>
-                <button type="button" id="btn-batal-file" class="text-gray-400 hover:text-red-500 text-sm ml-2">✕</button>
+        <div class="wa-input-bar px-3 sm:px-4 pt-2.5 pb-2.5 shrink-0" style="flex-shrink: 0;">
+            <div id="file-preview" class="hidden mb-2 bg-white border-l-4 border-[#00a884] px-3 py-2 rounded-lg flex justify-between items-center">
+                <p class="text-xs text-[#374151] truncate" id="file-preview-nama"></p>
+                <button type="button" id="btn-batal-file" class="text-[#667781] hover:text-[#f87171] text-sm ml-2">✕</button>
             </div>
 
-            <div id="reply-preview" class="hidden mb-2 bg-blue-50 border-l-4 border-blue-500 px-3 py-2 rounded-lg flex justify-between items-start">
+            <div id="reply-preview" class="hidden mb-2 bg-white border-l-4 border-[#00a884] px-3 py-2 rounded-lg flex justify-between items-start">
                 <div class="min-w-0">
-                    <p class="text-xs font-semibold text-blue-600" id="reply-nama"></p>
-                    <p class="text-xs text-gray-500 truncate" id="reply-isi"></p>
+                    <p class="text-xs font-semibold text-[#00a884]" id="reply-nama"></p>
+                    <p class="text-xs text-[#667781] truncate" id="reply-isi"></p>
                 </div>
-                <button type="button" id="btn-batal-reply" class="text-gray-400 hover:text-red-500 text-sm ml-2 shrink-0">✕</button>
+                <button type="button" id="btn-batal-reply" class="text-[#667781] hover:text-[#f87171] text-sm ml-2 shrink-0">✕</button>
             </div>
 
             <form id="form-pesan" class="flex gap-2 items-center">
                 <label for="input-file"
-                    class="cursor-pointer w-10 h-10 shrink-0 flex items-center justify-center rounded-full text-gray-500 hover:text-blue-600 hover:bg-gray-100 transition text-lg {{ $konsultasi->status === 'selesai' ? 'opacity-40 pointer-events-none' : '' }}"
+                    class="cursor-pointer w-10 h-10 shrink-0 flex items-center justify-center rounded-full text-[#667781] hover:text-[#111b21] hover:bg-[#e9edef] transition {{ $konsultasi->status === 'selesai' ? 'opacity-40 pointer-events-none' : '' }}"
                     title="Kirim file/foto">
-                    📎
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                    </svg>
                 </label>
                 <input type="file" id="input-file" class="hidden" {{ $konsultasi->status === 'selesai' ? 'disabled' : '' }}>
                 <input type="text" id="input-pesan" autocomplete="off"
-                    class="flex-1 bg-gray-100 border-none rounded-full px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="wa-input flex-1 rounded-full px-4 py-2.5 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     placeholder="Tulis pesan..."
                     {{ $konsultasi->status === 'selesai' ? 'disabled' : '' }}>
                 <button type="submit"
-                    class="w-10 h-10 shrink-0 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="wa-send-btn w-10 h-10 shrink-0 flex items-center justify-center rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
                     {{ $konsultasi->status === 'selesai' ? 'disabled' : '' }}>
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5m0 0l-6 6m6-6l6 6" />
@@ -261,7 +294,7 @@
         const filePreview = document.getElementById('file-preview');
         const filePreviewNama = document.getElementById('file-preview-nama');
         const btnBatalFile = document.getElementById('btn-batal-file');
-        const btnHapusSemua = document.getElementById('btn-hapus-semua');
+        const btnHapusSemuaList = document.querySelectorAll('[data-hapus-semua]');
         if (!form) {
             if (window.Echo) {
                 window.Echo.private(`konsultasi.${konsultasiId}`)
@@ -344,8 +377,8 @@
             wrapper.appendChild(btnReply);
 
             const inner = document.createElement('div');
-            inner.className = 'pesan-bubble max-w-xs sm:max-w-sm px-4 py-2.5 shadow-sm select-none ' +
-                (milikSendiri ? 'bg-blue-600 text-white rounded-2xl rounded-br-sm' : 'bg-white text-gray-800 border border-gray-200 rounded-2xl rounded-bl-sm');
+            inner.className = 'pesan-bubble max-w-[88%] sm:max-w-[72%] lg:max-w-[60%] px-3 py-2 shadow-sm select-none ' +
+                (milikSendiri ? 'wa-bubble-out' : 'wa-bubble-in');
             inner.style.webkitTouchCallout = 'none';
             inner.style.webkitUserSelect = 'none';
             inner.style.touchAction = 'pan-y';
@@ -353,12 +386,12 @@
             if (balasKe) {
                 const kutipan = document.createElement('div');
                 kutipan.className = 'mb-1.5 pl-2 py-1 border-l-2 rounded ' +
-                    (milikSendiri ? 'border-blue-300 bg-blue-500/40' : 'border-gray-300 bg-gray-50') + ' text-xs opacity-90';
+                    (milikSendiri ? 'border-[#00a884]/40 bg-[#d9fdd3]' : 'border-[#667781]/30 bg-[#f0f2f5]') + ' text-xs';
                 const pNama = document.createElement('p');
-                pNama.className = 'font-semibold';
+                pNama.className = 'font-semibold ' + (milikSendiri ? 'text-[#008069]' : 'text-[#008069]');
                 pNama.textContent = balasKe.pengirim_nama;
                 const pIsi = document.createElement('p');
-                pIsi.className = 'truncate';
+                pIsi.className = 'truncate text-[#374151]/90';
                 pIsi.textContent = balasKe.isi_pesan || '[File]';
                 kutipan.appendChild(pNama);
                 kutipan.appendChild(pIsi);
@@ -382,11 +415,11 @@
                     a.href = fileUrl;
                     a.target = '_blank';
                     a.className = 'flex items-center gap-2 mb-1.5 px-3 py-2 rounded-lg ' +
-                        (milikSendiri ? 'bg-blue-700/60' : 'bg-gray-100');
+                        (milikSendiri ? 'bg-[#d9fdd3]' : 'bg-[#f0f2f5]');
                     const span1 = document.createElement('span');
                     span1.textContent = '📎';
                     const span2 = document.createElement('span');
-                    span2.className = 'text-xs truncate';
+                    span2.className = 'text-xs truncate text-[#111b21]';
                     span2.textContent = fileNama || 'File';
                     a.appendChild(span1);
                     a.appendChild(span2);
@@ -396,17 +429,18 @@
 
             if (isiPesan) {
                 const p1 = document.createElement('p');
-                p1.className = 'text-sm leading-relaxed pesan-isi';
+                p1.className = 'text-[14.5px] leading-relaxed pesan-isi whitespace-pre-wrap break-words';
                 p1.textContent = isiPesan;
                 inner.appendChild(p1);
             }
 
             const p2 = document.createElement('p');
-            p2.className = 'text-[10px] opacity-70 mt-1 text-right';
+            p2.className = 'text-[11px] wa-bubble-meta mt-1 text-right';
             p2.textContent = waktu;
             if (milikSendiri) {
                 const statusBaca = document.createElement('span');
                 statusBaca.className = 'status-baca';
+                statusBaca.textContent = ' ✓';
                 p2.appendChild(statusBaca);
             }
             inner.appendChild(p2);
@@ -525,19 +559,21 @@
             }
         });
 
-        if (btnHapusSemua) {
-            btnHapusSemua.addEventListener('click', async () => {
-                if (!confirm('Hapus SEMUA chat di percakapan ini (hanya untuk kamu)? Tindakan ini tidak bisa dibatalkan.')) return;
+        if (btnHapusSemuaList.length) {
+            btnHapusSemuaList.forEach((btn) => {
+                btn.addEventListener('click', async () => {
+                    if (!confirm('Hapus SEMUA chat di percakapan ini (hanya untuk kamu)? Tindakan ini tidak bisa dibatalkan.')) return;
 
-                await fetch(`/konsultasi/${konsultasiId}/pesan`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRF-TOKEN': csrfToken,
-                        'X-Socket-ID': window.Echo.socketId(),
-                    },
+                    await fetch(`/konsultasi/${konsultasiId}/pesan`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken,
+                            'X-Socket-ID': window.Echo.socketId(),
+                        },
+                    });
+
+                    chatBox.innerHTML = '';
                 });
-
-                chatBox.innerHTML = '';
             });
         }
 
@@ -601,7 +637,8 @@
                 .listen('.PesanDibaca', (e) => {
                     if (e.pembaca_id === userId) return;
                     document.querySelectorAll('[data-milik-sendiri="1"] .status-baca').forEach(el => {
-                    el.textContent = ' · Dibaca';
+                    el.textContent = ' ✓✓';
+                    el.classList.add('text-[#53bdeb]');
                     });
                 });
 

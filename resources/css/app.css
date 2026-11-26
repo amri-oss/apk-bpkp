@@ -63,24 +63,120 @@
         display: flex;
         flex: 1 1 0%;
         flex-direction: column;
-        height: 0;
         min-height: 0;
         overflow: hidden;
-        padding-block: .75rem;
+        padding-block: 0;
     }
-    .chat-page-container,
-    .chat-page-grid {
-        height: 100%;
-        min-height: 0;
+    @media (min-width: 1024px) {
+        .chat-page { height: 0; }
     }
-    .chat-page-grid {
-        grid-template-rows: minmax(0, 1fr);
+    @media (max-width: 1023.98px) {
+        .chat-layout { height: auto; min-height: 100dvh; overflow: visible; }
+        .chat-main { overflow: visible; }
+        .chat-page { height: auto; min-height: 0; overflow: visible; padding-block: 0; }
+        .chat-page-container, .chat-page-grid { height: auto; min-height: 0; }
+        .chat-panel { height: auto; min-height: 0; }
+        .chat-page-grid { grid-template-rows: none; }
+        .chat-page .chat-panel { min-height: calc(100dvh - 140px); }
     }
-    .chat-panel {
-        height: 100%;
-        min-height: 0;
-    }
+    .chat-page-container, .chat-page-grid { height: 100%; min-height: 0; }
+    .chat-page-grid { grid-template-rows: minmax(0, 1fr); }
+    .chat-panel { height: 100%; min-height: 0; }
     .chat-panel > :not(#chat-box):not(.flex-1) { flex-shrink: 0; }
+
+    /* WhatsApp-style chat theme (light) */
+    .wa-shell {
+        background: #f0f2f5;
+        border: 0;
+        border-radius: 0;
+        overflow: hidden;
+        box-shadow: none;
+    }
+    .wa-sidebar {
+        background: #ffffff;
+        border-right: 1px solid #e9edef;
+    }
+    .wa-sidebar-header {
+        background: #f0f2f5;
+        padding: 14px 16px;
+        border-bottom: 1px solid #e9edef;
+    }
+    .wa-search {
+        background: #ffffff;
+        border: 1px solid #d1d7db;
+        color: #111b21;
+    }
+    .wa-search::placeholder { color: #667781; }
+    .wa-search:focus { border-color: #00a884; outline: none; box-shadow: none; }
+    .wa-chat-list { background: #ffffff; }
+    .wa-chat-item { border-bottom: 1px solid #f0f2f5; transition: background .15s ease; }
+    .wa-chat-item:hover { background: #f5f6f6; }
+    .wa-chat-item.is-active { background: #e9edef; }
+    .wa-chat-name { color: #111b21; }
+    .wa-chat-meta { color: #667781; }
+    .wa-chat-preview { color: #667781; }
+    .wa-unread-badge { background: #25d366; color: #ffffff; }
+    .wa-main { background: #efeae2; }
+    .wa-main-header {
+        background: #f0f2f5;
+        border-bottom: 1px solid #d1d7db;
+    }
+    .wa-main-header .wa-title { color: #111b21; }
+    .wa-main-header .wa-sub { color: #667781; }
+    .wa-action-btn {
+        color: #54656f;
+        border-radius: 10px;
+        padding: .45rem .7rem;
+        font-size: .75rem;
+        font-weight: 600;
+        transition: background .15s ease, color .15s ease;
+        white-space: nowrap;
+    }
+    .wa-action-btn:hover { background: #e9edef; }
+    .wa-action-btn-success { color: #008069; }
+    .wa-action-btn-danger { color: #dc2626; }
+    .wa-thread {
+        background-color: #efeae2;
+        background-image: radial-gradient(circle at 1px 1px, rgba(0,0,0,.05) 1px, transparent 0);
+        background-size: 24px 24px;
+    }
+    .wa-bubble-in {
+        background: #ffffff;
+        color: #111b21;
+        border-radius: 0 10px 10px 10px;
+    }
+    .wa-bubble-out {
+        background: #d9fdd3;
+        color: #111b21;
+        border-radius: 10px 0 10px 10px;
+    }
+    .wa-bubble-meta { color: #667781; }
+    .wa-bubble-out .wa-bubble-meta { color: #54656f; }
+    .wa-topic-chip {
+        background: #ffffff;
+        color: #54656f;
+        border: 1px solid #e9edef;
+        box-shadow: 0 1px 0.5px rgba(11,20,26,.13);
+    }
+    .wa-input-bar {
+        background: #f0f2f5;
+        border-top: 1px solid #d1d7db;
+    }
+    .wa-input {
+        background: #ffffff !important;
+        color: #111b21 !important;
+        border: 1px solid #e9edef !important;
+    }
+    .wa-input::placeholder { color: #667781; }
+    .wa-input:focus { box-shadow: none !important; outline: none !important; border-color: #cfd4d6 !important; }
+    .wa-send-btn { background: #00a884; color: #ffffff; }
+    .wa-send-btn:hover { background: #008069; }
+    .wa-empty { color: #667781; background: #f0f2f5; }
+    .wa-date-chip {
+        background: #ffffff;
+        color: #54656f;
+        border: 1px solid #e9edef;
+    }
 
     main table { border-collapse: separate; border-spacing: 0; }
     main table thead tr { background: #eaf0f7 !important; color: #334a63 !important; }
