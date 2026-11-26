@@ -15,7 +15,7 @@
         ],
         'konsultan' => [
             ['label' => 'Dashboard', 'route' => 'konsultan.dashboard', 'active' => 'konsultan.dashboard'],
-            ['label' => 'Obrolan',   'route' => 'konsultan.obrolan',   'active' => 'konsultan.obrolan'],
+            ['label' => 'Obrolan',   'route' => 'konsultan.obrolan',   'active' => 'konsultan.obrolan', 'params' => ['daftar' => 1]],
         ],
         'audiens' => [
             ['label' => 'Dashboard',       'route' => 'audiens.dashboard',       'active' => 'audiens.dashboard'],
@@ -48,21 +48,40 @@
     }
     .nav-biru-item:hover { background: rgba(255,255,255,.06); color: #ffffff; }
     .nav-biru-item.aktif { background: rgba(255,255,255,.07); color: #ffffff; border-bottom-color: var(--app-accent); }
+
+    .nav-topbar {
+        max-width: 80rem;
+        margin: 0 auto;
+        padding: 12px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+    .nav-topbar .nav-logo { height: 42px; width: auto; }
+    .nav-actions { display: flex; align-items: center; gap: 20px; }
+
+    /* Mobile: samakan padding dengan konten (16px) dan rapatkan bar */
+    @media (max-width: 639.98px) {
+        .nav-topbar { padding: 8px 16px; }
+        .nav-topbar .nav-logo { height: 34px; }
+        .nav-actions { gap: 10px; }
+    }
 </style>
 
 <nav x-data="{ open: false }" @click.outside="open = false" @keydown.escape.window="open = false" class="sticky top-0 z-50 bg-white border-b border-slate-200">
 
     {{-- Baris atas: logo, judul, lonceng, avatar --}}
-    <div style="max-width: 80rem; margin: 0 auto; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between;">
+    <div class="nav-topbar">
 
         <a href="{{ route('dashboard') }}" style="display: flex; align-items: center; gap: 12px; text-decoration: none;">
-            <img src="{{ asset('images/logo-bpkp.png') }}" alt="Logo BPKP" style="height: 42px; width: auto;">
+            <img src="{{ asset('images/logo-bpkp.png') }}" alt="Logo BPKP" class="nav-logo">
             <span class="hidden sm:block" style="font-size: 14px; font-weight: 700; color: #111827;">
                 BPKP Perwakilan Sulawesi Selatan
             </span>
         </a>
 
-        <div style="display: flex; align-items: center; gap: 20px;">
+        <div class="nav-actions">
 
             {{-- Lonceng --}}
             <button type="button" title="Notifikasi"
@@ -129,7 +148,7 @@
     <div class="hidden sm:block" style="background: var(--app-brand); box-shadow: 0 2px 6px rgba(15,23,42,0.12);">
         <div style="max-width: 80rem; margin: 0 auto; padding: 0 24px; display: flex; flex-wrap: wrap;">
             @foreach ($menuItems as $item)
-                <a href="{{ route($item['route']) }}"
+                <a href="{{ route($item['route'], $item['params'] ?? []) }}"
                    class="nav-biru-item {{ request()->routeIs($item['active']) ? 'aktif' : '' }}">
                     {{ $item['label'] }}
                 </a>
@@ -143,7 +162,7 @@
          class="hidden sm:hidden absolute left-0 right-0 top-full shadow-xl border-t border-white/10"
          style="background: var(--app-brand); max-height: calc(100dvh - 74px); overflow-y: auto;">
         @foreach ($menuItems as $item)
-            <a href="{{ route($item['route']) }}"
+            <a href="{{ route($item['route'], $item['params'] ?? []) }}"
                class="nav-biru-item {{ request()->routeIs($item['active']) ? 'aktif' : '' }}">
                 {{ $item['label'] }}
             </a>

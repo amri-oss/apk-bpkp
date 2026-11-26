@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Dashboard Konsultan</h2>
+        <h2 class="font-semibold text-base sm:text-xl text-gray-800 leading-tight">Dashboard Konsultan</h2>
     </x-slot>
 
     @php
@@ -9,7 +9,7 @@
         $selectedId = $konsultasis->first()?->id;
     @endphp
 
-    <div class="py-8" x-data="tolakModal()">
+    <div class="py-4 sm:py-8" x-data="tolakModal()">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 
             @if (session('success'))
@@ -24,7 +24,7 @@
             @endif
 
             {{-- Pencarian --}}
-            <div class="relative mb-6">
+            <div class="relative mb-4 sm:mb-6">
                 <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -34,7 +34,7 @@
                     class="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 items-start">
 
                 {{-- Daftar permintaan konsultasi (Kiri) --}}
                 <div class="lg:col-span-2">
@@ -223,7 +223,7 @@
                                             <div class="flex gap-2.5">
                                                 {{-- Tombol Tolak --}}
                                                 <button type="button"
-                                                    @click="bukaTolak('{{ route('konsultasi.tolak', $k->id) }}', @js($k->audiens->name))"
+                                                    @click="tutupDetail(); bukaTolak('{{ route('konsultasi.tolak', $k->id) }}', @js($k->audiens->name))"
                                                     class="flex-1 w-full bg-red-500 hover:bg-red-600 active:bg-red-700 text-white text-sm font-semibold py-2.5 px-4 rounded-xl transition shadow-sm">
                                                     Tolak
                                                 </button>
@@ -269,7 +269,7 @@
         </div>
 
         {{-- Modal Tolak Konsultasi --}}
-        <div x-cloak x-show="open" class="fixed inset-0 z-50 flex items-center justify-center p-4" aria-modal="true" role="dialog">
+        <div x-cloak x-show="open" class="fixed inset-0 z-[80] flex items-center justify-center p-4" aria-modal="true" role="dialog">
             <div class="absolute inset-0 bg-black/50" @click="tutup()"></div>
             <div class="relative bg-white w-full max-w-md rounded-2xl shadow-xl p-6" @click.stop>
                 <h3 class="text-lg font-bold text-gray-900">Tolak Permintaan Konsultasi</h3>

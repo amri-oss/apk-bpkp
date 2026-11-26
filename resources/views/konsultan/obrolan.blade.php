@@ -3,8 +3,9 @@
         <div class="chat-page-container w-full h-full px-0">
             <div class="wa-shell chat-panel flex flex-col lg:flex-row w-full h-full" style="min-height:0; border-radius: 0;">
 
+                @php $tampilDaftar = request()->boolean('daftar'); @endphp
                 {{-- Sidebar daftar obrolan --}}
-                <div class="wa-sidebar flex flex-col {{ $selected ? 'hidden lg:flex' : 'flex' }} w-full lg:w-[320px] xl:w-[340px] lg:min-w-[320px] xl:min-w-[340px] lg:max-w-[340px] min-h-0">
+                <div class="wa-sidebar flex flex-col {{ ($selected && !$tampilDaftar) ? 'hidden lg:flex' : 'flex' }} w-full lg:w-[320px] xl:w-[340px] lg:min-w-[320px] xl:min-w-[340px] lg:max-w-[340px] min-h-0">
                     <div class="wa-sidebar-header shrink-0">
                         <div class="flex items-center justify-between mb-3">
                             <div>
@@ -34,7 +35,7 @@
                 </div>
 
                 {{-- Panel chat --}}
-                <div class="{{ $selected ? 'flex' : 'hidden lg:flex' }} flex-1 min-w-0 min-h-0 flex-col">
+                <div class="{{ ($selected && !$tampilDaftar) ? 'flex' : 'hidden lg:flex' }} flex-1 min-w-0 min-h-0 flex-col">
                     @if ($selected)
                         @include('partials._chat-konsultasi', ['konsultasi' => $selected, 'showBack' => true])
                     @else

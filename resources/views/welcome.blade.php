@@ -42,7 +42,7 @@
                     <p class="text-white/90 text-base sm:text-lg mb-6">
                         Konsultasikan kebutuhan Anda dengan mudah
                     </p>
-                    <a href="{{ auth()->check() ? route('dashboard') : route('register') }}"
+                    <a href="{{ auth()->check() ? route('dashboard') : route('login') }}"
                         class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-lg shadow-lg">
                         Mulai Konsultasi
                     </a>

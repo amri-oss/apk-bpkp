@@ -13,6 +13,54 @@ use Illuminate\Support\Facades\Storage;
 
 class PesanController extends Controller
 {
+    public function index(Request $request, Konsultasi $konsultasi)
+    {
+        $user = Auth::user();
+
+        abort_unless(
+            $konsultasi->audiens_id === $user->id || $konsultasi->konsultan_id === $user->id,
+            403
+        );
+
+        $after = (int) $request->query('after', 0);
+
+        $query = $konsultasi->pesans()
+            ->where('id', '>', $after)
+            ->where('disembunyikan_oleh_pengirim', false)
+            ->with(['pengirim', 'balasKe.pengirim'])
+            ->orderBy('id');
+
+        if ($user->id === $konsultasi->audiens_id && $konsultasi->dibersihkan_audiens_pada) {
+            $query->where('created_at', '>', $konsultasi->dibersihkan_audiens_pada);
+        }
+
+        if ($user->id === $konsultasi->konsultan_id && $konsultasi->dibersihkan_konsultan_pada) {
+            $query->where('created_at', '>', $konsultasi->dibersihkan_konsultan_pada);
+        }
+
+        $pesans = $query->get()->map(fn ($p) => [
+            'id' => $p->id,
+            'isi_pesan' => $p->isi_pesan,
+            'pengirim_id' => $p->pengirim_id,
+            'pengirim_nama' => $p->pengirim->name,
+            'waktu' => $p->created_at->format('H:i'),
+            'file_url' => $p->file_path ? asset('storage/' . $p->file_path) : null,
+            'file_nama' => $p->file_nama,
+            'file_tipe' => $p->file_tipe,
+            'dibaca' => $p->dibaca_at !== null,
+            'balas_ke' => $p->balasKe ? [
+                'id' => $p->balasKe->id,
+                'isi_pesan' => $p->balasKe->isi_pesan,
+                'pengirim_nama' => $p->balasKe->pengirim->name,
+            ] : null,
+        ]);
+
+        return response()->json([
+            'pesans' => $pesans,
+            'status' => $konsultasi->status,
+        ]);
+    }
+
     public function store(Request $request, Konsultasi $konsultasi)
     {
         $user = Auth::user();

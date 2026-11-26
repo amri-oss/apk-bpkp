@@ -24,7 +24,7 @@
         <div class="flex items-center justify-between gap-3">
             <div class="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
                 @if ($showBack ?? false)
-                    <a href="{{ auth()->user()->role === 'konsultan' ? route('konsultan.obrolan') : route('audiens.konsultasi-saya') }}"
+                    <a href="{{ auth()->user()->role === 'konsultan' ? route('konsultan.obrolan', ['daftar' => 1]) : route('audiens.konsultasi-saya') }}"
                        class="sm:hidden shrink-0 inline-flex items-center justify-center w-9 h-9 -ml-1 rounded-full text-[#54656f] hover:bg-[#e9edef] transition"
                        aria-label="Kembali ke daftar">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -131,18 +131,11 @@
                     @endif
 
                     @if ($pesan->file_path)
-                        @if ($pesan->isGambar())
-                            <a href="{{ asset('storage/' . $pesan->file_path) }}" target="_blank">
-                                <img src="{{ asset('storage/' . $pesan->file_path) }}" class="rounded-lg max-w-full mb-1.5" alt="{{ $pesan->file_nama }}"
-                                onerror="window.retryGambar(this)">
-                            </a>
-                        @else
-                            <a href="{{ asset('storage/' . $pesan->file_path) }}" target="_blank"
-                                class="flex items-center gap-2 mb-1.5 px-3 py-2 rounded-lg {{ $pesan->pengirim_id === auth()->id() ? 'bg-[#d9fdd3]' : 'bg-[#f0f2f5]' }}">
-                                <span>📎</span>
-                                <span class="text-xs truncate text-[#111b21]">{{ $pesan->file_nama }}</span>
-                            </a>
-                        @endif
+                        <a href="{{ asset('storage/' . $pesan->file_path) }}" target="_blank"
+                            class="flex items-center gap-2 mb-1.5 px-3 py-2 rounded-lg {{ $pesan->pengirim_id === auth()->id() ? 'bg-[#d9fdd3]' : 'bg-[#f0f2f5]' }}">
+                            <span>📎</span>
+                            <span class="text-xs truncate text-[#111b21]">{{ $pesan->file_nama }}</span>
+                        </a>
                     @endif
 
                     @if ($pesan->isi_pesan)
@@ -399,32 +392,19 @@
             }
 
             if (fileUrl) {
-                if (isGambarFile(fileTipe, fileNama)) {
-                    const a = document.createElement('a');
-                    a.href = fileUrl;
-                    a.target = '_blank';
-                    const img = document.createElement('img');
-                    img.src = fileUrl;
-                    img.className = 'rounded-lg max-w-full mb-1.5';
-                    img.alt = fileNama || '';
-                    img.onerror = function () { window.retryGambar(img); };
-                    a.appendChild(img);
-                    inner.appendChild(a);
-                } else {
-                    const a = document.createElement('a');
-                    a.href = fileUrl;
-                    a.target = '_blank';
-                    a.className = 'flex items-center gap-2 mb-1.5 px-3 py-2 rounded-lg ' +
-                        (milikSendiri ? 'bg-[#d9fdd3]' : 'bg-[#f0f2f5]');
-                    const span1 = document.createElement('span');
-                    span1.textContent = '📎';
-                    const span2 = document.createElement('span');
-                    span2.className = 'text-xs truncate text-[#111b21]';
-                    span2.textContent = fileNama || 'File';
-                    a.appendChild(span1);
-                    a.appendChild(span2);
-                    inner.appendChild(a);
-                }
+                const a = document.createElement('a');
+                a.href = fileUrl;
+                a.target = '_blank';
+                a.className = 'flex items-center gap-2 mb-1.5 px-3 py-2 rounded-lg ' +
+                    (milikSendiri ? 'bg-[#d9fdd3]' : 'bg-[#f0f2f5]');
+                const span1 = document.createElement('span');
+                span1.textContent = '📎';
+                const span2 = document.createElement('span');
+                span2.className = 'text-xs truncate text-[#111b21]';
+                span2.textContent = fileNama || 'File';
+                a.appendChild(span1);
+                a.appendChild(span2);
+                inner.appendChild(a);
             }
 
             if (isiPesan) {
@@ -651,7 +631,53 @@
                 });
         }
 
-        chatBox.scrollTop = chatBox.scrollHeight;
+        function gulirKeBawah(force) {
+            if (!chatBox) return;
+            const dekatBawah = (chatBox.scrollHeight - chatBox.scrollTop - chatBox.clientHeight) < 120;
+            if (force || dekatBawah) chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        gulirKeBawah(true);
+        requestAnimationFrame(() => gulirKeBawah(true));
+        setTimeout(() => gulirKeBawah(true), 120);
+        setTimeout(() => gulirKeBawah(true), 450);
+        window.addEventListener('load', () => gulirKeBawah(true));
+
+        // Polling fallback: pesan baru terlihat tanpa refresh (Reverb mungkin tidak aktif)
+        let lastId = 0;
+        document.querySelectorAll('#chat-box [data-id]').forEach(el => {
+            const v = parseInt(el.dataset.id, 10);
+            if (!isNaN(v) && v > lastId) lastId = v;
+        });
+
+        async function pollPesan() {
+            if (document.hidden) return;
+            try {
+                const res = await fetch(`/konsultasi/${konsultasiId}/pesan?after=${lastId}`, {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data.status && data.status !== '{{ $konsultasi->status }}') {
+                    window.location.reload();
+                    return;
+                }
+                if (Array.isArray(data.pesans)) {
+                    data.pesans.forEach(p => {
+                        if (document.getElementById(`pesan-${p.id}`)) {
+                            if (p.id > lastId) lastId = p.id;
+                            return;
+                        }
+                        buatBubble(p.id, p.isi_pesan, p.waktu, p.pengirim_id, p.pengirim_nama, p.balas_ke, p.file_url, p.file_nama, p.file_tipe);
+                        if (p.id > lastId) lastId = p.id;
+                    });
+                    if (data.pesans.length) gulirKeBawah(false);
+                }
+            } catch (e) { /* silent */ }
+        }
+
+        setInterval(pollPesan, 4000);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) pollPesan(); });
     });
 </script>
 @endpush
