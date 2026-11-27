@@ -18,6 +18,7 @@
             'selesai' => 'text-[#64748b]',
             default => 'text-[#64748b]',
         };
+        $disclaimerKonsultasi = 'Disclaimer: Jawaban dalam konsultasi online ini merupakan pendapat normatif dan tidak mewakili sikap resmi BPKP. Pendapat resmi hanya dapat disampaikan melalui surat resmi sesuai ketentuan peraturan perundang-undangan yang berlaku.';
     @endphp
 
     <div class="wa-main-header px-3 sm:px-4 py-1.5 sm:py-2 shrink-0">
@@ -97,6 +98,12 @@
     </div>
 
     <div class="wa-thread flex-1 overflow-y-auto px-3 sm:px-4 lg:px-5 py-1.5 flex flex-col gap-1.5 min-h-0" id="chat-box" style="flex: 1 1 0%; min-height: 0;">
+
+        <div class="flex justify-center my-1">
+            <div class="max-w-[92%] sm:max-w-[80%] rounded-lg border border-[#f59e0b]/40 bg-[#fffbeb] px-3 py-2 text-[11px] sm:text-xs leading-relaxed text-[#92400e] text-center shadow-sm">
+                {{ $disclaimerKonsultasi }}
+            </div>
+        </div>
 
         @if ($konsultasi->topik || $konsultasi->topik_lainnya)
             <div class="flex justify-center mb-1">
@@ -216,57 +223,60 @@
         </div>
     @else
         @if ($konsultasi->status === 'selesai')
-            <div class="px-3 pt-2 pb-1.5 wa-input-bar shrink-0" style="flex-shrink: 0;">
-                <div class="flex items-center justify-center gap-2 py-2 mb-2 bg-white border border-[#b9c2cd] rounded-xl text-sm text-[#64748b]">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                    Konsultasi ini sudah selesai. Anda tidak dapat mengirim pesan lagi.
-                </div>
-                @if ($konsultasi->alasan_tolak)
-                    <div class="mb-2 bg-[#fee2e2] border border-[#fca5a5] text-[#f87171] rounded-xl px-3 py-2 text-sm">
-                        <span class="font-semibold">Alasan penolakan:</span> {{ $konsultasi->alasan_tolak }}
+            <div class="px-3 pt-2 pb-2 wa-input-bar shrink-0" style="flex-shrink: 0;">
+                <div class="max-w-3xl mx-auto rounded-xl border border-[#b9c2cd] bg-white px-3 py-2.5 shadow-sm">
+                    <div class="flex items-center justify-center gap-2 text-sm font-medium text-[#475569] text-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        <span>Konsultasi ini sudah selesai. Anda tidak dapat mengirim pesan lagi.</span>
                     </div>
-                @endif
+                    <div class="mt-2 rounded-lg border border-[#f59e0b]/40 bg-[#fffbeb] px-3 py-2 text-[11px] sm:text-xs leading-relaxed text-[#92400e] text-center">
+                        {{ $disclaimerKonsultasi }}
+                    </div>
+                    @if ($konsultasi->alasan_tolak)
+                        <div class="mt-2 bg-[#fee2e2] border border-[#fca5a5] text-[#991b1b] rounded-lg px-3 py-2 text-xs sm:text-sm">
+                            <span class="font-semibold">Alasan penolakan:</span> {{ $konsultasi->alasan_tolak }}
+                        </div>
+                    @endif
+                </div>
+            </div>
+        @else
+            <div class="wa-input-bar px-3 sm:px-4 pt-2.5 pb-2.5 shrink-0" style="flex-shrink: 0;">
+                <div id="file-preview" class="hidden mb-2 bg-white border-l-4 border-[#1E3A8A] px-3 py-2 rounded-lg flex justify-between items-center">
+                    <p class="text-xs text-[#1E3A8A] truncate" id="file-preview-nama"></p>
+                    <button type="button" id="btn-batal-file" class="text-[#64748b] hover:text-[#f87171] text-sm ml-2">✕</button>
+                </div>
+
+                <div id="reply-preview" class="hidden mb-2 bg-white border-l-4 border-[#1E3A8A] px-3 py-2 rounded-lg flex justify-between items-start">
+                    <div class="min-w-0">
+                        <p class="text-xs font-semibold text-[#60A5FA]" id="reply-nama"></p>
+                        <p class="text-xs text-[#64748b] truncate" id="reply-isi"></p>
+                    </div>
+                    <button type="button" id="btn-batal-reply" class="text-[#64748b] hover:text-[#f87171] text-sm ml-2 shrink-0">✕</button>
+                </div>
+
+                <form id="form-pesan" class="flex gap-2 items-center">
+                    <label for="input-file"
+                        class="cursor-pointer w-10 h-10 shrink-0 flex items-center justify-center rounded-full text-[#64748b] hover:text-[#172b45] hover:bg-[#e8eef5] transition"
+                        title="Kirim file/foto">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                        </svg>
+                    </label>
+                    <input type="file" id="input-file" class="hidden">
+                    <input type="text" id="input-pesan" autocomplete="off"
+                        class="wa-input flex-1 rounded-full px-4 py-2.5 text-sm"
+                        placeholder="Tulis pesan...">
+                    <button type="submit"
+                        class="wa-send-btn w-10 h-10 shrink-0 flex items-center justify-center rounded-full transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5m0 0l-6 6m6-6l6 6" />
+                        </svg>
+                    </button>
+                </form>
             </div>
         @endif
-
-        <div class="wa-input-bar px-3 sm:px-4 pt-2.5 pb-2.5 shrink-0" style="flex-shrink: 0;">
-            <div id="file-preview" class="hidden mb-2 bg-white border-l-4 border-[#1E3A8A] px-3 py-2 rounded-lg flex justify-between items-center">
-                <p class="text-xs text-[#1E3A8A] truncate" id="file-preview-nama"></p>
-                <button type="button" id="btn-batal-file" class="text-[#64748b] hover:text-[#f87171] text-sm ml-2">✕</button>
-            </div>
-
-            <div id="reply-preview" class="hidden mb-2 bg-white border-l-4 border-[#1E3A8A] px-3 py-2 rounded-lg flex justify-between items-start">
-                <div class="min-w-0">
-                    <p class="text-xs font-semibold text-[#60A5FA]" id="reply-nama"></p>
-                    <p class="text-xs text-[#64748b] truncate" id="reply-isi"></p>
-                </div>
-                <button type="button" id="btn-batal-reply" class="text-[#64748b] hover:text-[#f87171] text-sm ml-2 shrink-0">✕</button>
-            </div>
-
-            <form id="form-pesan" class="flex gap-2 items-center">
-                <label for="input-file"
-                    class="cursor-pointer w-10 h-10 shrink-0 flex items-center justify-center rounded-full text-[#64748b] hover:text-[#172b45] hover:bg-[#e8eef5] transition {{ $konsultasi->status === 'selesai' ? 'opacity-40 pointer-events-none' : '' }}"
-                    title="Kirim file/foto">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                    </svg>
-                </label>
-                <input type="file" id="input-file" class="hidden" {{ $konsultasi->status === 'selesai' ? 'disabled' : '' }}>
-                <input type="text" id="input-pesan" autocomplete="off"
-                    class="wa-input flex-1 rounded-full px-4 py-2.5 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                    placeholder="Tulis pesan..."
-                    {{ $konsultasi->status === 'selesai' ? 'disabled' : '' }}>
-                <button type="submit"
-                    class="wa-send-btn w-10 h-10 shrink-0 flex items-center justify-center rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    {{ $konsultasi->status === 'selesai' ? 'disabled' : '' }}>
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5m0 0l-6 6m6-6l6 6" />
-                    </svg>
-                </button>
-            </form>
-        </div>
     @endif
 
 </div>
