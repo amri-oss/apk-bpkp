@@ -1,15 +1,24 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-base sm:text-xl text-gray-800 leading-tight">Dashboard Konsultan</h2>
-    </x-slot>
 
     @php
         // Ambil URL foto audiens (null kalau belum punya foto)
         $fotoUrl = fn ($u) => $u->foto_profil ? asset('storage/' . $u->foto_profil) : null;
         $selectedId = $konsultasis->first()?->id;
+
+        // Ringkasan status untuk grafik donat
+        $totalKonsultasi = $konsultasis->count();
+        $jumlahMenunggu = $konsultasis->where('status', 'menunggu')->count();
+        $jumlahBerlangsung = $konsultasis->where('status', 'berlangsung')->count();
+        $jumlahSelesai = $konsultasis->where('status', 'selesai')->count();
+        $pctMenunggu = $totalKonsultasi ? round($jumlahMenunggu / $totalKonsultasi * 100) : 0;
+        $pctBerlangsung = $totalKonsultasi ? round($jumlahBerlangsung / $totalKonsultasi * 100) : 0;
+        $pctSelesai = 100 - $pctMenunggu - $pctBerlangsung;
+        $donatWarna = $totalKonsultasi
+            ? "conic-gradient(#f59e0b 0 {$pctMenunggu}%, #10b981 {$pctMenunggu}% " . ($pctMenunggu + $pctBerlangsung) . "%, #64748b " . ($pctMenunggu + $pctBerlangsung) . "% 100%)"
+            : 'conic-gradient(#e5e7eb 0 100%)';
     @endphp
 
-    <div class="py-4 sm:py-8" x-data="tolakModal()">
+    <div class="py-1.5 sm:py-3" x-data="tolakModal()">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 
             @if (session('success'))
@@ -24,7 +33,7 @@
             @endif
 
             {{-- Pencarian --}}
-            <div class="relative mb-4 sm:mb-6">
+            <div class="relative mb-2 sm:mb-3">
                 <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -34,18 +43,19 @@
                     class="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 items-start">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-2 lg:gap-3 items-start">
+                {{-- Kolom 1: daftar konsultasi, Kolom 2: detail, Kolom 3: grafik --}}
 
                 {{-- Daftar permintaan konsultasi (Kiri) --}}
-                <div class="lg:col-span-2">
+                <div>
                     <div class="flex items-center justify-between mb-3">
-                        <h3 class="font-bold text-gray-800 text-base">Permintaan Konsultasi Terbaru</h3>
+                        <h3 class="font-bold text-gray-800 text-sm">Permintaan Konsultasi Terbaru</h3>
                         <span class="text-xs font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">
                             {{ $konsultasis->count() }} Permintaan
                         </span>
                     </div>
 
-                    <div class="space-y-3" id="daftar-konsultasi">
+                    <div class="space-y-1.5" id="daftar-konsultasi">
                         @forelse ($konsultasis as $index => $k)
                             @php
                                 $fotoAudiens = $fotoUrl($k->audiens);
@@ -57,7 +67,7 @@
                                     default => 'bg-gray-100 text-gray-700'
                                 };
                             @endphp
-                            <div class="konsultasi-item cursor-pointer rounded-xl p-4 transition-all duration-150 border flex items-center gap-3.5 {{ $isInitialActive ? 'bg-blue-600 text-white border-blue-600 shadow-md ring-2 ring-blue-400 ring-offset-2' : 'bg-white text-gray-800 border-gray-200 hover:border-blue-300 hover:shadow-sm' }}"
+                            <div class="konsultasi-item cursor-pointer rounded-lg p-2 transition-all duration-150 border flex items-center gap-2 {{ $isInitialActive ? 'bg-[#1E3A8A] text-white border-[#1E3A8A] shadow-md ring-2 ring-[#60A5FA] ring-offset-2' : 'bg-white text-gray-800 border-gray-200 hover:border-[#60A5FA] hover:shadow-sm' }}"
                                 data-id="{{ $k->id }}"
                                 data-nama="{{ strtolower($k->audiens->name) }}"
                                 onclick="pilihKonsultasi({{ $k->id }})">
@@ -65,9 +75,9 @@
                                 {{-- Avatar --}}
                                 @if ($fotoAudiens)
                                     <img src="{{ $fotoAudiens }}" alt="{{ $k->audiens->name }}"
-                                         class="w-11 h-11 rounded-full object-cover shrink-0 {{ $isInitialActive ? 'ring-2 ring-white/80' : 'bg-gray-100' }}">
+                                         class="w-8 h-8 rounded-full object-cover shrink-0 {{ $isInitialActive ? 'ring-2 ring-white/80' : 'bg-gray-100' }}">
                                 @else
-                                    <div class="w-11 h-11 rounded-full flex items-center justify-center font-bold text-sm shrink-0 {{ $isInitialActive ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-700' }}">
+                                    <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 {{ $isInitialActive ? 'bg-white/20 text-white' : 'bg-blue-50 text-[#1E3A8A]' }}">
                                         {{ strtoupper(substr($k->audiens->name, 0, 1)) }}
                                     </div>
                                 @endif
@@ -75,18 +85,18 @@
                                 {{-- Informasi --}}
                                 <div class="min-w-0 flex-1">
                                     <div class="flex items-center gap-2">
-                                        <p class="font-bold truncate text-sm sm:text-base">{{ $k->audiens->name }}</p>
+                                        <p class="font-bold truncate text-[12px]">{{ $k->audiens->name }}</p>
                                         {{-- Indikator Terpilih --}}
-                                        <span class="item-badge-selected text-[10px] font-semibold bg-white/25 text-white px-2 py-0.5 rounded-full {{ $isInitialActive ? '' : 'hidden' }}">
+                                        <span class="item-badge-selected text-[9px] font-semibold bg-white/25 text-white px-1.5 py-0.5 rounded-full {{ $isInitialActive ? '' : 'hidden' }}">
                                             Terpilih ✓
                                         </span>
                                     </div>
                                     <div class="flex items-center gap-2 mt-1">
-                                        <span class="text-xs px-2 py-0.5 rounded-md font-medium text-item-status {{ $isInitialActive ? 'bg-white/20 text-white' : $statusBadgeClass }}">
+                                        <span class="text-[9px] px-1.5 py-0.5 rounded-md font-medium text-item-status {{ $isInitialActive ? 'bg-white/20 text-white' : $statusBadgeClass }}">
                                             {{ ucfirst($k->status) }}
                                         </span>
                                         @if ($k->topik || $k->topik_lainnya)
-                                            <span class="text-xs truncate text-item-sub {{ $isInitialActive ? 'text-blue-100' : 'text-gray-500' }}">
+                                            <span class="text-[10px] truncate text-item-sub {{ $isInitialActive ? 'text-blue-100' : 'text-gray-500' }}">
                                                 · {{ $k->topik->nama_topik ?? $k->topik_lainnya }}
                                             </span>
                                         @endif
@@ -95,10 +105,10 @@
 
                                 {{-- Waktu & Panah --}}
                                 <div class="text-right shrink-0">
-                                    <span class="text-xs font-medium block text-item-time {{ $isInitialActive ? 'text-blue-100' : 'text-gray-400' }}">
+                                    <span class="text-[9px] font-medium block text-item-time {{ $isInitialActive ? 'text-blue-100' : 'text-gray-400' }}">
                                         {{ $k->created_at->format('H.i') }}
                                     </span>
-                                    <span class="text-xs mt-1 block opacity-80">
+                                    <span class="text-[9px] mt-1 block opacity-80">
                                         {{ $k->created_at->translatedFormat('d M') }}
                                     </span>
                                 </div>
@@ -113,9 +123,10 @@
 
                 {{-- Detail permintaan & Aksi Konfirmasi (Kanan di desktop, pop-up di mobile) --}}
                 <div class="detail-panel lg:sticky lg:top-8" id="detail-panel">
+                    <h3 class="hidden lg:block font-bold text-gray-800 text-sm mb-3">Detail &amp; Konfirmasi</h3>
                     <div class="detail-body">
-                        <div class="detail-sheet-title mb-3">
-                            <h3 class="font-bold text-gray-800 text-base">Detail &amp; Konfirmasi</h3>
+                        <div class="detail-sheet-title mb-3 lg:hidden">
+                            <h3 class="font-bold text-gray-800 text-sm">Detail &amp; Konfirmasi</h3>
                             <button type="button" onclick="tutupDetail()"
                                 class="lg:hidden inline-flex items-center justify-center w-9 h-9 rounded-full text-gray-500 hover:bg-gray-100 active:bg-gray-200 transition"
                                 aria-label="Tutup detail">
@@ -144,7 +155,7 @@
                                                 <img src="{{ $fotoA }}" alt="{{ $k->audiens->name }}"
                                                      class="w-12 h-12 rounded-full object-cover bg-gray-100">
                                             @else
-                                                <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-base">
+                                                <div class="w-12 h-12 rounded-full bg-blue-50 text-[#1E3A8A] flex items-center justify-center font-bold text-base">
                                                     {{ strtoupper(substr($k->audiens->name, 0, 1)) }}
                                                 </div>
                                             @endif
@@ -233,14 +244,14 @@
                                                     @csrf
                                                     @method('PATCH')
                                                     <button type="submit"
-                                                        class="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-semibold py-2.5 px-4 rounded-xl transition shadow-sm text-center">
+                                                        class="w-full bg-[#1E3A8A] hover:bg-[#172554] active:bg-[#172554] text-white text-sm font-semibold py-2.5 px-4 rounded-xl transition shadow-sm text-center">
                                                         Terima
                                                     </button>
                                                 </form>
                                             </div>
                                         @elseif ($k->status === 'berlangsung')
                                             <a href="{{ route('konsultan.obrolan', $k->id) }}"
-                                                class="w-full inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2.5 px-4 rounded-xl transition shadow-sm">
+                                                class="w-full inline-flex items-center justify-center gap-2 bg-[#1E3A8A] hover:bg-[#172554] text-white text-sm font-semibold py-2.5 px-4 rounded-xl transition shadow-sm">
                                                 <span>Buka Ruang Obrolan</span>
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
@@ -262,6 +273,45 @@
                             Pilih salah satu permintaan untuk melihat detail.
                         </div>
                     @endif
+                    </div>
+                </div>
+
+                {{-- Grafik donat status konsultasi (Kanan) --}}
+                <div class="lg:sticky lg:top-8">
+                    <h3 class="font-bold text-gray-800 text-sm mb-3">Statistik Konsultasi</h3>
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
+                    <div class="flex flex-col items-center">
+                        <div class="relative w-32 h-32 rounded-full shrink-0" style="background: {{ $donatWarna }};">
+                            <div class="absolute inset-4 rounded-full bg-white flex flex-col items-center justify-center shadow-inner">
+                                <span class="text-2xl font-bold text-gray-800 leading-none">{{ $totalKonsultasi }}</span>
+                                <span class="text-[10px] text-gray-500 mt-1">Total</span>
+                            </div>
+                        </div>
+
+                        <div class="w-full mt-4 space-y-2 text-xs">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="flex items-center gap-2 text-gray-600">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0"></span>
+                                    Menunggu
+                                </span>
+                                <span class="font-semibold text-gray-800">{{ $jumlahMenunggu }}</span>
+                            </div>
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="flex items-center gap-2 text-gray-600">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span>
+                                    Berlangsung
+                                </span>
+                                <span class="font-semibold text-gray-800">{{ $jumlahBerlangsung }}</span>
+                            </div>
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="flex items-center gap-2 text-gray-600">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-slate-500 shrink-0"></span>
+                                    Selesai
+                                </span>
+                                <span class="font-semibold text-gray-800">{{ $jumlahSelesai }}</span>
+                            </div>
+                        </div>
+                    </div>
                     </div>
                 </div>
 
@@ -323,39 +373,31 @@
                 const textSub = item.querySelector('.text-item-sub');
                 const textTime = item.querySelector('.text-item-time');
                 const textStatus = item.querySelector('.text-item-status');
+                const img = item.querySelector('img.w-11');
+                const avatar = item.querySelector('div.w-11.rounded-full.flex');
 
                 if (isSelected) {
-                    item.className = 'konsultasi-item cursor-pointer rounded-xl p-4 transition-all duration-150 border flex items-center gap-3.5 bg-blue-600 text-white border-blue-600 shadow-md ring-2 ring-blue-400 ring-offset-2';
+                    item.className = 'konsultasi-item cursor-pointer rounded-lg p-2 transition-all duration-150 border flex items-center gap-2 bg-[#1E3A8A] text-white border-[#1E3A8A] shadow-md ring-2 ring-[#60A5FA] ring-offset-2';
                     if (badgeSelected) badgeSelected.classList.remove('hidden');
-                    if (textSub) {
-                        textSub.classList.add('text-blue-100');
-                        textSub.classList.remove('text-gray-500');
-                    }
-                    if (textTime) {
-                        textTime.classList.add('text-blue-100');
-                        textTime.classList.remove('text-gray-400');
-                    }
-                    if (textStatus) {
-                        textStatus.className = 'text-xs px-2 py-0.5 rounded-md font-medium text-item-status bg-white/20 text-white';
-                    }
+                    if (textSub) { textSub.classList.add('text-blue-100'); textSub.classList.remove('text-gray-500'); }
+                    if (textTime) { textTime.classList.add('text-blue-100'); textTime.classList.remove('text-gray-400'); }
+                    if (textStatus) { textStatus.className = 'text-[9px] px-1.5 py-0.5 rounded-md font-medium text-item-status bg-white/20 text-white'; }
+                    if (img) { img.classList.add('ring-2', 'ring-white/80'); img.classList.remove('bg-gray-100'); }
+                    if (avatar) { avatar.classList.add('bg-white/20', 'text-white'); avatar.classList.remove('bg-blue-50', 'text-[#1E3A8A]'); }
                 } else {
-                    item.className = 'konsultasi-item cursor-pointer rounded-xl p-4 transition-all duration-150 border flex items-center gap-3.5 bg-white text-gray-800 border-gray-200 hover:border-blue-300 hover:shadow-sm';
+                    item.className = 'konsultasi-item cursor-pointer rounded-lg p-2 transition-all duration-150 border flex items-center gap-2 bg-white text-gray-800 border-gray-200 hover:border-[#60A5FA] hover:shadow-sm';
                     if (badgeSelected) badgeSelected.classList.add('hidden');
-                    if (textSub) {
-                        textSub.classList.remove('text-blue-100');
-                        textSub.classList.add('text-gray-500');
-                    }
-                    if (textTime) {
-                        textTime.classList.remove('text-blue-100');
-                        textTime.classList.add('text-gray-400');
-                    }
+                    if (textSub) { textSub.classList.remove('text-blue-100'); textSub.classList.add('text-gray-500'); }
+                    if (textTime) { textTime.classList.remove('text-blue-100'); textTime.classList.add('text-gray-400'); }
                     if (textStatus) {
                         const status = item.querySelector('.text-item-status')?.textContent.trim().toLowerCase();
                         let badgeClass = 'bg-gray-100 text-gray-700';
                         if (status === 'menunggu') badgeClass = 'bg-amber-100 text-amber-800';
                         else if (status === 'berlangsung') badgeClass = 'bg-emerald-100 text-emerald-800';
-                        textStatus.className = 'text-xs px-2 py-0.5 rounded-md font-medium text-item-status ' + badgeClass;
+                        textStatus.className = 'text-[9px] px-1.5 py-0.5 rounded-md font-medium text-item-status ' + badgeClass;
                     }
+                    if (img) { img.classList.remove('ring-2', 'ring-white/80'); img.classList.add('bg-gray-100'); }
+                    if (avatar) { avatar.classList.remove('bg-white/20', 'text-white'); avatar.classList.add('bg-blue-50', 'text-[#1E3A8A]'); }
                 }
             });
 

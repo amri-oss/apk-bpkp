@@ -2,7 +2,6 @@
     $user = Auth::user();
     $role = $user->role;
 
-    // Menu per role, sesuai routes/web.php
     $menus = [
         'admin' => [
             ['label' => 'Dashboard',          'route' => 'admin.dashboard',              'active' => 'admin.dashboard'],
@@ -26,11 +25,17 @@
 
     $menuItems = $menus[$role] ?? $menus['audiens'];
 
-    // Foto avatar: konsultan dari profil konsultan, lainnya dari akun user
     $profilKonsultan = $role === 'konsultan' ? ($user->konsultanProfil ?? null) : null;
     $fotoNav = $profilKonsultan?->foto_profil
         ? asset('storage/' . $profilKonsultan->foto_profil)
         : ($user->foto_profil ? asset('storage/' . $user->foto_profil) : null);
+
+    $roleLabel = match ($role) {
+        'admin' => 'Admin',
+        'konsultan' => 'Konsultan',
+        'audiens' => 'Audiens',
+        default => ucfirst((string) $role),
+    };
 @endphp
 
 <style>
@@ -48,105 +53,140 @@
     }
     .nav-biru-item:hover { background: rgba(255,255,255,.06); color: #ffffff; }
     .nav-biru-item.aktif { background: rgba(255,255,255,.07); color: #ffffff; border-bottom-color: var(--app-accent); }
-
-    .nav-topbar {
-        max-width: 80rem;
-        margin: 0 auto;
-        padding: 12px 24px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-    }
-    .nav-topbar .nav-logo { height: 42px; width: auto; }
-    .nav-actions { display: flex; align-items: center; gap: 20px; }
-
-    /* Mobile: samakan padding dengan konten (16px) dan rapatkan bar */
-    @media (max-width: 639.98px) {
-        .nav-topbar { padding: 8px 16px; }
-        .nav-topbar .nav-logo { height: 34px; }
-        .nav-actions { gap: 10px; }
-    }
 </style>
 
-<nav x-data="{ open: false }" @click.outside="open = false" @keydown.escape.window="open = false" class="sticky top-0 z-50 bg-white border-b border-slate-200">
+<nav x-data="{ mobileOpen: false, notifOpen: false, profileOpen: false }"
+     @click.outside="mobileOpen = false; notifOpen = false; profileOpen = false"
+     @keydown.escape.window="mobileOpen = false; notifOpen = false; profileOpen = false"
+     class="sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 backdrop-blur">
 
-    {{-- Baris atas: logo, judul, lonceng, avatar --}}
-    <div class="nav-topbar">
-
-        <a href="{{ route('dashboard') }}" style="display: flex; align-items: center; gap: 12px; text-decoration: none;">
-            <img src="{{ asset('images/logo-bpkp.png') }}" alt="Logo BPKP" class="nav-logo">
-            <span class="hidden sm:block" style="font-size: 14px; font-weight: 700; color: #111827;">
-                BPKP Perwakilan Sulawesi Selatan
-            </span>
+    {{-- Top bar --}}
+    <div class="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
+        {{-- Logo --}}
+        <a href="{{ route('dashboard') }}" class="flex min-w-0 items-center gap-3 no-underline">
+            <img src="{{ asset('images/logo-bpkp.png') }}" alt="Logo BPKP" class="h-9 w-auto shrink-0 sm:h-10">
+            <div class="min-w-0 hidden sm:block">
+                <p class="truncate text-sm font-bold leading-tight text-slate-900">BPKP Perwakilan Sulawesi Selatan</p>
+                <p class="text-[11px] font-medium tracking-wide text-slate-500">LONTARA</p>
+            </div>
         </a>
 
-        <div class="nav-actions">
+        {{-- Right actions --}}
+        <div class="flex items-center gap-2 sm:gap-3">
+            {{-- Notifications --}}
+            <div class="relative">
+                <button type="button"
+                        @click="notifOpen = !notifOpen; profileOpen = false"
+                        class="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-[#60A5FA]/50 hover:text-[#1E3A8A] focus:outline-none focus:ring-2 focus:ring-[#60A5FA]/30"
+                        aria-haspopup="menu" :aria-expanded="notifOpen.toString()" aria-label="Notifikasi">
+                    <span class="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/>
+                    </svg>
+                </button>
 
-            {{-- Lonceng --}}
-            <button type="button" title="Notifikasi"
-                    style="background: none; border: 0; cursor: pointer; padding: 4px; color: #111827;">
-                <svg style="width: 22px; height: 22px;" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/>
-                </svg>
-            </button>
-
-            {{-- Avatar + nama (dropdown profil) --}}
-            <div class="hidden sm:block">
-                <x-dropdown align="right" width="48">
-                    <x-slot name="trigger">
-                        <button type="button" style="display: flex; align-items: center; gap: 12px; background: none; border: 0; cursor: pointer; padding: 0;">
-                            @if ($fotoNav)
-                                <img src="{{ $fotoNav }}" alt="{{ $user->name }}"
-                                     style="width: 46px; height: 46px; border-radius: 9999px; object-fit: cover; background: #D1D5DB;">
-                            @else
-                                <span style="width: 46px; height: 46px; border-radius: 9999px; background: #D1D5DB; display: flex; align-items: center; justify-content: center; color: #111827;">
-                                    <svg style="width: 22px; height: 22px;" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/>
-                                    </svg>
-                                </span>
-                            @endif
-
-                            <span style="font-size: 17px; font-weight: 700; color: #111827;">{{ $user->name }}</span>
-
-                            <svg style="width: 16px; height: 16px; color: #6B7280;" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
-                        </button>
-                    </x-slot>
-
-                    <x-slot name="content">
-                        <x-dropdown-link :href="route('profile.edit')">
-                            {{ __('Profile') }}
-                        </x-dropdown-link>
-
-                        <form method="POST" action="{{ route('logout') }}">
-                            @csrf
-
-                            <x-dropdown-link :href="route('logout')"
-                                    onclick="event.preventDefault();
-                                                this.closest('form').submit();">
-                                {{ __('Log Out') }}
-                            </x-dropdown-link>
-                        </form>
-                    </x-slot>
-                </x-dropdown>
+                <div x-cloak x-show="notifOpen"
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 scale-95"
+                     x-transition:enter-end="opacity-100 scale-100"
+                     x-transition:leave="transition ease-in duration-75"
+                     x-transition:leave-start="opacity-100 scale-100"
+                     x-transition:leave-end="opacity-0 scale-95"
+                     class="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] origin-top-right rounded-2xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5"
+                     style="display:none" role="menu">
+                    <div class="border-b border-slate-100 px-4 py-3">
+                        <h6 class="text-sm font-semibold text-slate-900">Notifikasi</h6>
+                    </div>
+                    <div class="max-h-72 overflow-auto py-1">
+                        <div class="flex items-start gap-3 px-4 py-3 hover:bg-slate-50">
+                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1E3A8A]/10 text-[#1E3A8A]">
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <p class="truncate text-sm font-medium text-slate-900">Belum ada notifikasi baru</p>
+                                <p class="mt-0.5 text-xs text-slate-500">Aktivitas terbaru akan muncul di sini.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="border-t border-slate-100 px-4 py-2.5 text-center">
+                        <span class="text-xs font-medium text-slate-400">Pusat notifikasi</span>
+                    </div>
+                </div>
             </div>
 
-            {{-- Hamburger (mobile) --}}
-            <button @click="open = ! open" class="sm:hidden" type="button"
-                    style="background: none; border: 0; cursor: pointer; padding: 6px; color: #6B7280;">
-                <svg style="width: 26px; height: 26px;" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                    <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                    <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            {{-- Profile dropdown --}}
+            <div class="relative hidden sm:block">
+                <button type="button"
+                        @click="profileOpen = !profileOpen; notifOpen = false"
+                        class="flex items-center gap-2 rounded-full border border-slate-200 bg-white py-1 pl-1 pr-3 shadow-sm transition hover:border-[#60A5FA]/50 focus:outline-none focus:ring-2 focus:ring-[#60A5FA]/30"
+                        aria-haspopup="menu" :aria-expanded="profileOpen.toString()" aria-label="Menu profil">
+                    <span class="relative h-9 w-9 shrink-0 overflow-hidden rounded-full bg-slate-200">
+                        @if ($fotoNav)
+                            <img src="{{ $fotoNav }}" alt="{{ $user->name }}" class="h-full w-full object-cover" onerror="this.remove()">
+                        @endif
+                        <span class="absolute inset-0 flex items-center justify-center text-sm font-semibold text-[#1E3A8A]">{{ strtoupper(substr($user->name, 0, 1)) }}</span>
+                    </span>
+                    <span class="hidden max-w-[140px] truncate text-sm font-semibold text-slate-800 md:block">{{ $user->name }}</span>
+                    <svg class="h-4 w-4 text-slate-400" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+
+                <div x-cloak x-show="profileOpen"
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 scale-95"
+                     x-transition:enter-end="opacity-100 scale-100"
+                     x-transition:leave="transition ease-in duration-75"
+                     x-transition:leave-start="opacity-100 scale-100"
+                     x-transition:leave-end="opacity-0 scale-95"
+                     class="absolute right-0 mt-2 w-64 origin-top-right rounded-2xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5"
+                     style="display:none" role="menu">
+                    <div class="flex items-center gap-3 border-b border-slate-100 px-4 py-3">
+                        <span class="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-slate-200">
+                            @if ($fotoNav)
+                                <img src="{{ $fotoNav }}" alt="{{ $user->name }}" class="h-full w-full object-cover" onerror="this.remove()">
+                            @endif
+                            <span class="absolute inset-0 flex items-center justify-center text-sm font-semibold text-[#1E3A8A]">{{ strtoupper(substr($user->name, 0, 1)) }}</span>
+                        </span>
+                        <div class="min-w-0">
+                            <p class="truncate text-sm font-semibold text-slate-900">{{ $user->name }}</p>
+                            <p class="truncate text-xs text-slate-500">{{ $roleLabel }}</p>
+                        </div>
+                    </div>
+                    <div class="py-1">
+                        <a href="{{ route('profile.edit') }}" class="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 transition hover:bg-slate-50 hover:text-[#1E3A8A]">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+                            Profile
+                        </a>
+                    </div>
+                    <div class="border-t border-slate-100 p-2">
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="flex w-full items-center justify-center gap-2 rounded-xl bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-100">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3.25h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21.25h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9"/></svg>
+                                Log Out
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Mobile hamburger --}}
+            <button type="button"
+                    @click="mobileOpen = !mobileOpen; notifOpen = false; profileOpen = false"
+                    class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-[#60A5FA]/50 hover:text-[#1E3A8A] sm:hidden"
+                    aria-label="Menu">
+                <svg class="h-5 w-5" stroke="currentColor" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                    <path :class="{'hidden': mobileOpen, 'inline-flex': !mobileOpen}" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    <path :class="{'hidden': !mobileOpen, 'inline-flex': mobileOpen}" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
         </div>
     </div>
 
-    {{-- Bar biru menu (desktop) --}}
+    {{-- Role menu bar (desktop) --}}
     <div class="hidden sm:block" style="background: var(--app-brand); box-shadow: 0 2px 6px rgba(15,23,42,0.12);">
-        <div style="max-width: 80rem; margin: 0 auto; padding: 0 24px; display: flex; flex-wrap: wrap;">
+        <div class="mx-auto flex max-w-7xl flex-wrap px-6 lg:px-8">
             @foreach ($menuItems as $item)
                 <a href="{{ route($item['route'], $item['params'] ?? []) }}"
                    class="nav-biru-item {{ request()->routeIs($item['active']) ? 'aktif' : '' }}">
@@ -156,11 +196,16 @@
         </div>
     </div>
 
-    {{-- Menu mobile --}}
-    <div x-cloak
-         :class="{'block': open, 'hidden': ! open}"
-         class="hidden sm:hidden absolute left-0 right-0 top-full shadow-xl border-t border-white/10"
-         style="background: var(--app-brand); max-height: calc(100dvh - 74px); overflow-y: auto;">
+    {{-- Mobile menu --}}
+    <div x-cloak x-show="mobileOpen"
+         x-transition:enter="transition ease-out duration-150"
+         x-transition:enter-start="opacity-0 -translate-y-1"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-100"
+         x-transition:leave-start="opacity-100 translate-y-0"
+         x-transition:leave-end="opacity-0 -translate-y-1"
+         class="absolute left-0 right-0 top-full border-t border-white/10 shadow-xl sm:hidden"
+         style="display:none; background: var(--app-brand); max-height: calc(100dvh - 74px); overflow-y: auto;">
         @foreach ($menuItems as $item)
             <a href="{{ route($item['route'], $item['params'] ?? []) }}"
                class="nav-biru-item {{ request()->routeIs($item['active']) ? 'aktif' : '' }}">
@@ -168,20 +213,25 @@
             </a>
         @endforeach
 
-        <div style="border-top: 1px solid rgba(255,255,255,0.25); padding: 12px 0;">
-            <div style="padding: 0 24px 8px 24px; color: #ffffff;">
-                <div style="font-weight: 700; font-size: 14px;">{{ $user->name }}</div>
-                <div style="font-size: 12px; opacity: 0.85;">{{ $user->email }}</div>
+        <div style="border-top: 1px solid rgba(255,255,255,0.2); padding: 12px 0;">
+            <div class="flex items-center gap-3 px-6 pb-3 text-white">
+                <span class="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-white/15">
+                    @if ($fotoNav)
+                        <img src="{{ $fotoNav }}" alt="{{ $user->name }}" class="h-full w-full object-cover" onerror="this.remove()">
+                    @endif
+                    <span class="absolute inset-0 flex items-center justify-center text-sm font-semibold text-white">{{ strtoupper(substr($user->name, 0, 1)) }}</span>
+                </span>
+                <div class="min-w-0">
+                    <div class="truncate text-sm font-bold">{{ $user->name }}</div>
+                    <div class="truncate text-xs opacity-80">{{ $user->email }}</div>
+                </div>
             </div>
-
             <a href="{{ route('profile.edit') }}" class="nav-biru-item">Profile</a>
-
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
-                <a href="{{ route('logout') }}" class="nav-biru-item"
-                   onclick="event.preventDefault(); this.closest('form').submit();">
+                <button type="submit" class="nav-biru-item w-full text-left" style="background:none;border:0;cursor:pointer;">
                     Log Out
-                </a>
+                </button>
             </form>
         </div>
     </div>

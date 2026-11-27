@@ -12,7 +12,7 @@
 
     {{-- Header --}}
     <header class="bg-white shadow-sm relative z-20">
-        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+        <div class="max-w-6xl mx-auto px-6 py-2.5 flex justify-between items-center">
             <div class="flex items-center gap-3">
                 <img src="{{ asset('images/logo-bpkp.png') }}" alt="Logo BPKP" class="h-10 w-auto">
                 <span class="font-semibold text-gray-800">
@@ -72,7 +72,7 @@
     </section>
 
     {{-- Kartu mengambang, nempel di batas bawah hero --}}
-    <div class="max-w-3xl mx-auto px-6 -mt-20 relative z-10">
+    <div class="max-w-3xl mx-auto px-6 -mt-14 relative z-10">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
 
             <a href="{{ route('audiens.pilih-konsultan') }}"

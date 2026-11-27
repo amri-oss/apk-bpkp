@@ -27,7 +27,7 @@
                     <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama..."
                         class="flex-1 w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <button type="submit"
-                        class="bg-green-600 hover:bg-green-700 text-white font-semibold text-sm px-6 py-3 rounded-lg shrink-0">
+                        class="bg-[#1E3A8A] hover:bg-[#172554] text-white font-semibold text-sm px-6 py-3 rounded-[20px] shrink-0 transition">
                         Cari
                     </button>
                 </form>
@@ -81,7 +81,7 @@
                                     inisial: @js(strtoupper(substr($kp->user->name, 0, 1))),
                                     topiks: @js($topikOptions),
                                 })"
-                                class="w-full bg-green-600 hover:bg-green-700 active:bg-green-800 text-white text-xs sm:text-sm font-semibold py-2.5 transition">
+                                class="w-full bg-[#1E3A8A] hover:bg-[#172554] active:bg-[#1E3A8A] text-white text-xs sm:text-sm font-semibold py-2.5 rounded-[20px] transition">
                                 KONSUL
                             </button>
                         </div>
@@ -151,8 +151,8 @@
                                 </div>
 
                                 <div class="flex gap-2 mt-5">
-                                    <button type="button" @click="tutup()" class="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition">Batal</button>
-                                    <button type="submit" class="flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold text-white bg-green-600 hover:bg-green-700 transition">Kirim Konsultasi</button>
+                                    <button type="button" @click="tutup()" class="flex-1 px-4 py-2.5 rounded-[20px] text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition">Batal</button>
+                                    <button type="submit" class="flex-1 px-4 py-2.5 rounded-[20px] text-sm font-semibold text-white bg-[#1E3A8A] hover:bg-[#172554] transition">Kirim Konsultasi</button>
                                 </div>
                             </form>
                         </div>

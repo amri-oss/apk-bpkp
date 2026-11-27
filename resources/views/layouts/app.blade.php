@@ -23,22 +23,24 @@
             );
         @endphp
 
-        <div class="{{ $isChatWorkspace ? 'chat-layout' : 'min-h-screen' }} flex flex-col bg-slate-50">
+        <div class="{{ $isChatWorkspace ? 'chat-layout' : 'min-h-screen' }} flex flex-col bg-[#F1F5F9] relative overflow-x-hidden">
             @include('layouts.navigation')
 
-            <!-- Page Heading -->
-            @isset($header)
-                <header class="border-b border-slate-200 bg-white shadow-sm">
-                    <div class="max-w-7xl mx-auto py-3 px-4 sm:py-6 sm:px-6 lg:px-8">
-                        {{ $header }}
-                    </div>
-                </header>
-            @endisset
+            <div class="relative z-[1] flex flex-col flex-1 min-h-0 {{ $isChatWorkspace ? 'overflow-hidden' : '' }}">
+                <!-- Page Heading -->
+                @isset($header)
+                    <header class="border-b border-slate-200/80 bg-white/95 backdrop-blur-sm shadow-sm">
+                        <div class="max-w-7xl mx-auto py-2 px-4 sm:py-3 sm:px-6 lg:px-8">
+                            {{ $header }}
+                        </div>
+                    </header>
+                @endisset
 
-            <!-- Page Content -->
-            <main class="flex-1 {{ $isChatWorkspace ? 'chat-main' : '' }}">
-                {{ $slot }}
-            </main>
+                <!-- Page Content -->
+                <main class="flex-1 {{ $isChatWorkspace ? 'chat-main' : '' }}">
+                    {{ $slot }}
+                </main>
+            </div>
         </div>
         @stack('scripts')
     </body>

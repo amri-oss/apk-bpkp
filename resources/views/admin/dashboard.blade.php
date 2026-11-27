@@ -1,6 +1,6 @@
 <x-app-layout>
-    <div class="bg-slate-50 py-4 sm:py-5">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
+    <div class="bg-[#F1F5F9] py-1.5 sm:py-2">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-2">
 
             {{-- Banner selamat datang --}}
             <div class="page-banner rounded-xl border border-slate-200 bg-white shadow-sm p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">

@@ -32,31 +32,31 @@
 
         <div class="group relative wa-chat-item {{ $sedangDibuka ? 'is-active' : '' }}">
             <a href="{{ route($rutaChat ?? 'konsultasi.show', $k->id) }}"
-                class="flex items-center gap-3 px-4 py-3 pr-12 min-w-0">
+                class="flex items-center gap-1.5 min-w-0" style="padding: 4px 8px 4px 8px;">
 
                 <div class="relative shrink-0">
-                    <div class="w-12 h-12 rounded-full bg-[#e9edef] text-[#374151] flex items-center justify-center font-semibold text-base">
+                    <div class="w-8 h-8 rounded-full bg-[#e9edef] text-[#374151] flex items-center justify-center font-semibold text-[10px] shrink-0">
                         {{ strtoupper(substr($lawanBicara->name ?? '?', 0, 1)) }}
                     </div>
                     @if ($belumDibaca > 0)
-                        <span class="wa-unread-badge absolute -top-0.5 -right-0.5 min-w-[20px] h-[20px] px-1 rounded-full text-[11px] font-bold flex items-center justify-center text-white">
+                        <span class="wa-unread-badge absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-1 rounded-full text-[9px] font-bold flex items-center justify-center text-white">
                             {{ $belumDibaca > 9 ? '9+' : $belumDibaca }}
                         </span>
                     @endif
                 </div>
 
-                <div class="min-w-0 flex-1">
+                <div class="min-w-0 flex-1 mr-8">
                     <div class="flex items-center justify-between gap-2">
-                        <p class="wa-chat-name font-medium text-[15px] truncate">{{ $lawanBicara->name ?? 'Pengguna' }}</p>
+                        <p class="wa-chat-name font-medium text-[12px] leading-tight truncate">{{ $lawanBicara->name ?? 'Pengguna' }}</p>
                         @if ($k->updated_at)
-                            <span class="wa-chat-meta text-xs shrink-0 {{ $belumDibaca > 0 ? 'text-[#00a884]' : '' }}">
+                            <span class="wa-chat-meta text-[9px] leading-tight shrink-0 {{ $belumDibaca > 0 ? 'text-[#00a884]' : '' }}">
                                 {{ $k->updated_at->format('H:i') }}
                             </span>
                         @endif
                     </div>
 
                     <div class="flex items-center gap-2 mt-0.5 min-w-0">
-                        <p class="wa-chat-preview text-[13px] truncate flex-1">
+                        <p class="wa-chat-preview text-[10px] leading-tight truncate flex-1">
                             @if ($pesanTerakhir)
                                 {{ $pesanTerakhir->isi_pesan ?? '📎 File' }}
                             @else
@@ -65,7 +65,7 @@
                         </p>
                     </div>
 
-                    <p class="text-[11px] mt-1 font-medium {{ $statusColor }}">{{ $statusLabel }}</p>
+                    <p class="text-[9px] leading-tight mt-0.5 font-medium {{ $statusColor }}">{{ $statusLabel }}</p>
                 </div>
             </a>
 

@@ -18,9 +18,6 @@
                 </span>
             </div>
             <div class="flex items-center gap-4">
-                <a href="{{ route('login') }}" class="text-gray-800 font-medium hover:text-blue-600">
-                    Log in
-                </a>
                 <a href="{{ route('register') }}"
                     class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2 rounded-lg">
                     Daftar

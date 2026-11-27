@@ -13,33 +13,33 @@
             default => ucfirst($konsultasi->status),
         };
         $statusColor = match($konsultasi->status) {
-            'berlangsung' => 'text-[#00a884]',
+            'berlangsung' => 'text-[#1E3A8A]',
             'menunggu' => 'text-[#b45309]',
-            'selesai' => 'text-[#667781]',
-            default => 'text-[#667781]',
+            'selesai' => 'text-[#64748b]',
+            default => 'text-[#64748b]',
         };
     @endphp
 
-    <div class="wa-main-header px-4 sm:px-5 py-2.5 sm:py-3 shrink-0">
+    <div class="wa-main-header px-3 sm:px-4 py-1.5 sm:py-2 shrink-0">
         <div class="flex items-center justify-between gap-3">
             <div class="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
                 @if ($showBack ?? false)
                     <a href="{{ auth()->user()->role === 'konsultan' ? route('konsultan.obrolan', ['daftar' => 1]) : route('audiens.konsultasi-saya') }}"
-                       class="sm:hidden shrink-0 inline-flex items-center justify-center w-9 h-9 -ml-1 rounded-full text-[#54656f] hover:bg-[#e9edef] transition"
+                       class="sm:hidden shrink-0 inline-flex items-center justify-center w-9 h-9 -ml-1 rounded-full text-[#64748b] hover:bg-[#e8eef5] transition"
                        aria-label="Kembali ke daftar">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
                         </svg>
                     </a>
                 @endif
-                <div class="w-10 h-10 shrink-0 rounded-full bg-[#e9edef] text-[#374151] flex items-center justify-center font-semibold">
+                <div class="w-10 h-10 shrink-0 rounded-full bg-[#e8eef5] text-[#1E3A8A] flex items-center justify-center font-semibold">
                     {{ $lawanInisial }}
                 </div>
                 <div class="min-w-0 flex-1">
                     <div class="flex items-center gap-2 min-w-0">
                         <h2 class="wa-title font-medium text-[15px] sm:text-base leading-tight truncate">{{ $lawanNama }}</h2>
                         @if ($konsultasi->topik || $konsultasi->topik_lainnya)
-                            <span class="hidden sm:inline-flex text-[11px] font-medium bg-white text-[#667781] px-2 py-0.5 rounded-full whitespace-nowrap max-w-[220px] truncate border border-[#e9edef]">
+                            <span class="hidden sm:inline-flex text-[11px] font-medium bg-white text-[#1E3A8A] px-2 py-0.5 rounded-full whitespace-nowrap max-w-[220px] truncate border border-[#b9c2cd]">
                                 {{ $konsultasi->topik->nama_topik ?? $konsultasi->topik_lainnya }}
                             </span>
                         @endif
@@ -70,20 +70,20 @@
 
         @if ($konsultasi->topik || $konsultasi->topik_lainnya)
             <div class="sm:hidden mt-2">
-                <span class="inline-flex text-[11px] font-medium bg-white text-[#667781] px-2 py-0.5 rounded-full max-w-full truncate border border-[#e9edef]">
+                <span class="inline-flex text-[11px] font-medium bg-white text-[#1E3A8A] px-2 py-0.5 rounded-full max-w-full truncate border border-[#b9c2cd]">
                     {{ $konsultasi->topik->nama_topik ?? $konsultasi->topik_lainnya }}
                 </span>
             </div>
         @endif
 
         @if (!in_array($konsultasi->status, ['menunggu'], true))
-            <div class="flex sm:hidden items-center gap-2 mt-2.5 pt-2.5 border-t border-[#e9edef]">
+            <div class="flex sm:hidden items-center gap-2 mt-2.5 pt-2.5 border-t border-[#b9c2cd]">
                 @if ($konsultasi->status !== 'selesai')
                     <form action="{{ route('konsultasi.selesai', $konsultasi->id) }}" method="POST" class="flex-1"
                           onsubmit="return confirm('Tandai konsultasi ini sebagai selesai?')">
                         @csrf
                         @method('PATCH')
-                        <button type="submit" class="w-full inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-[#008069] bg-[#dcfce7] hover:bg-[#bbf7d0] px-3 py-2 rounded-lg transition">
+                        <button type="submit" class="w-full inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-[#1E3A8A] bg-white hover:bg-[#e8eef5] px-3 py-2 rounded-lg transition">
                             Tandai Selesai
                         </button>
                     </form>
@@ -96,7 +96,7 @@
         @endif
     </div>
 
-    <div class="wa-thread flex-1 overflow-y-auto px-3 sm:px-4 lg:px-6 py-3 flex flex-col gap-2 min-h-0" id="chat-box" style="flex: 1 1 0%; min-height: 0;">
+    <div class="wa-thread flex-1 overflow-y-auto px-3 sm:px-4 lg:px-5 py-1.5 flex flex-col gap-1.5 min-h-0" id="chat-box" style="flex: 1 1 0%; min-height: 0;">
 
         @if ($konsultasi->topik || $konsultasi->topik_lainnya)
             <div class="flex justify-center mb-1">
@@ -115,36 +115,45 @@
                 data-milik-sendiri="{{ $pesan->pengirim_id === auth()->id() ? '1' : '0' }}">
 
                 @if (!$audiensMenungguPersetujuan && !$konsultanBelumKonfirmasi && $konsultasi->status !== 'selesai')
-                    <button class="btn-reply shrink-0 w-7 h-7 flex items-center justify-center rounded-full text-[#667781] opacity-0 group-hover:opacity-100 hover:text-[#111b21] hover:bg-[#e9edef] transition text-base">
+                    <button class="btn-reply shrink-0 w-7 h-7 flex items-center justify-center rounded-full text-[#64748b] opacity-0 group-hover:opacity-100 hover:text-[#172b45] hover:bg-[#e8eef5] transition text-base">
                         ↩
                     </button>
                 @endif
 
-                <div class="pesan-bubble max-w-[88%] sm:max-w-[72%] lg:max-w-[60%] px-3 py-2 shadow-sm select-none {{ $pesan->pengirim_id === auth()->id() ? 'wa-bubble-out' : 'wa-bubble-in' }}"
+                <div class="pesan-bubble max-w-[85%] sm:max-w-[68%] lg:max-w-[55%] px-2 py-1 shadow-sm select-none {{ $pesan->pengirim_id === auth()->id() ? 'wa-bubble-out' : 'wa-bubble-in' }}"
                     style="-webkit-touch-callout: none; -webkit-user-select: none; touch-action: pan-y;">
 
                     @if ($pesan->balasKe)
-                        <div class="mb-1.5 pl-2 py-1 border-l-2 rounded {{ $pesan->pengirim_id === auth()->id() ? 'border-[#00a884]/40 bg-[#d9fdd3]' : 'border-[#667781]/30 bg-[#f0f2f5]' }} text-xs">
-                            <p class="font-semibold {{ $pesan->pengirim_id === auth()->id() ? 'text-[#008069]' : 'text-[#008069]' }}">{{ $pesan->balasKe->pengirim->name }}</p>
-                            <p class="truncate text-[#374151]/90">{{ $pesan->balasKe->isi_pesan }}</p>
+                        <div class="mb-1.5 pl-2 py-1 border-l-2 rounded {{ $pesan->pengirim_id === auth()->id() ? 'border-[#1E3A8A]/40 bg-[#1E3A8A]' : 'border-[#94a3b8]/30 bg-white' }} text-xs">
+                            <p class="font-semibold {{ $pesan->pengirim_id === auth()->id() ? 'text-[#bfdbfe]' : 'text-[#1E3A8A]' }}">{{ $pesan->balasKe->pengirim->name }}</p>
+                            <p class="truncate {{ $pesan->pengirim_id === auth()->id() ? 'text-white/80' : 'text-[#475569]' }}">{{ $pesan->balasKe->isi_pesan }}</p>
                         </div>
                     @endif
 
                     @if ($pesan->file_path)
-                        <a href="{{ asset('storage/' . $pesan->file_path) }}" target="_blank"
-                            class="flex items-center gap-2 mb-1.5 px-3 py-2 rounded-lg {{ $pesan->pengirim_id === auth()->id() ? 'bg-[#d9fdd3]' : 'bg-[#f0f2f5]' }}">
-                            <span>📎</span>
-                            <span class="text-xs truncate text-[#111b21]">{{ $pesan->file_nama }}</span>
-                        </a>
+                        @php $isImage = str_starts_with((string) $pesan->file_tipe, 'image/'); @endphp
+                        @if ($isImage)
+                            <a href="{{ asset('storage/' . $pesan->file_path) }}" target="_blank" class="block mb-1.5">
+                                <img src="{{ asset('storage/' . $pesan->file_path) }}" alt="{{ $pesan->file_nama }}"
+                                     class="rounded-lg max-w-[240px] max-h-[240px] w-auto h-auto object-cover border border-white/10"
+                                     loading="lazy">
+                            </a>
+                        @else
+                            <a href="{{ asset('storage/' . $pesan->file_path) }}" target="_blank"
+                                class="flex items-center gap-2 mb-1.5 px-3 py-2 rounded-lg {{ $pesan->pengirim_id === auth()->id() ? 'bg-[#1E3A8A]' : 'bg-white' }}">
+                                <span>📎</span>
+                                <span class="text-xs truncate {{ $pesan->pengirim_id === auth()->id() ? 'text-white' : 'text-[#172b45]' }}">{{ $pesan->file_nama }}</span>
+                            </a>
+                        @endif
                     @endif
 
                     @if ($pesan->isi_pesan)
-                        <p class="text-[14.5px] leading-relaxed pesan-isi whitespace-pre-wrap break-words">{{ $pesan->isi_pesan }}</p>
+                        <p class="text-[13.5px] leading-snug pesan-isi whitespace-pre-wrap break-words">{{ $pesan->isi_pesan }}</p>
                     @endif
-                    <p class="text-[11px] wa-bubble-meta mt-1 text-right">
+                    <p class="text-[10px] wa-bubble-meta mt-0.5 text-right">
                         {{ $pesan->created_at->format('H:i') }}
                         @if ($pesan->pengirim_id === auth()->id())
-                            <span class="status-baca {{ $pesan->dibaca_at ? 'text-[#53bdeb]' : '' }}">{{ $pesan->dibaca_at ? ' ✓✓' : ' ✓' }}</span>
+                            <span class="status-baca {{ $pesan->dibaca_at ? 'text-[#93c5fd]' : '' }}">{{ $pesan->dibaca_at ? ' ✓✓' : ' ✓' }}</span>
                         @endif
                     </p>
                 </div>
@@ -153,21 +162,21 @@
     </div>
 
     @if ($audiensMenungguPersetujuan)
-        <div class="border-t border-[#e9edef] bg-[#f0f2f5] px-5 py-4 text-center shrink-0" style="flex-shrink: 0;">
-            <p class="text-sm font-semibold text-[#111b21]">Menunggu persetujuan konsultan</p>
-            <p class="mt-1 text-xs text-[#667781]">Deskripsi konsultasi Anda sudah dikirim. Kolom pesan akan tersedia setelah konsultasi diterima.</p>
+        <div class="border-t border-[#b9c2cd] bg-white px-5 py-4 text-center shrink-0" style="flex-shrink: 0;">
+            <p class="text-sm font-semibold text-[#172b45]">Menunggu persetujuan konsultan</p>
+            <p class="mt-1 text-xs text-[#64748b]">Deskripsi konsultasi Anda sudah dikirim. Kolom pesan akan tersedia setelah konsultasi diterima.</p>
         </div>
     @elseif ($konsultanBelumKonfirmasi)
-        <div class="border-t border-[#e9edef] bg-[#f0f2f5] px-5 py-4 shrink-0" style="flex-shrink: 0;" x-data="{ tolakOpen: false, alasanTolak: '' }">
+        <div class="border-t border-[#b9c2cd] bg-white px-5 py-4 shrink-0" style="flex-shrink: 0;" x-data="{ tolakOpen: false, alasanTolak: '' }">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                    <p class="text-sm font-semibold text-[#111b21] flex items-center gap-1.5">
+                    <p class="text-sm font-semibold text-[#172b45] flex items-center gap-1.5">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-[#b45309]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                         </svg>
                         Konfirmasi Permintaan Konsultasi
                     </p>
-                    <p class="mt-0.5 text-xs text-[#667781]">Anda hanya dapat melihat pesan permintaan ini. Silakan konfirmasi untuk mulai merespon dan membalas pesan.</p>
+                    <p class="mt-0.5 text-xs text-[#64748b]">Anda hanya dapat melihat pesan permintaan ini. Silakan konfirmasi untuk mulai merespon dan membalas pesan.</p>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
                     <button type="button" @click="tolakOpen = true; $nextTick(() => $refs.alasanTolak.focus())"
@@ -178,7 +187,7 @@
                         @csrf
                         @method('PATCH')
                         <button type="submit"
-                            class="px-4 py-2 bg-[#00a884] hover:bg-[#008069] text-white text-xs font-semibold rounded-lg transition">
+                            class="px-4 py-2 bg-[#1E3A8A] hover:bg-[#2563eb] text-white text-xs font-semibold rounded-lg transition">
                             Terima Permintaan
                         </button>
                     </form>
@@ -207,8 +216,8 @@
         </div>
     @else
         @if ($konsultasi->status === 'selesai')
-            <div class="px-4 pt-2.5 pb-2 wa-input-bar shrink-0" style="flex-shrink: 0;">
-                <div class="flex items-center justify-center gap-2 py-2 mb-2 bg-white border border-[#e9edef] rounded-xl text-sm text-[#667781]">
+            <div class="px-3 pt-2 pb-1.5 wa-input-bar shrink-0" style="flex-shrink: 0;">
+                <div class="flex items-center justify-center gap-2 py-2 mb-2 bg-white border border-[#b9c2cd] rounded-xl text-sm text-[#64748b]">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
@@ -223,22 +232,22 @@
         @endif
 
         <div class="wa-input-bar px-3 sm:px-4 pt-2.5 pb-2.5 shrink-0" style="flex-shrink: 0;">
-            <div id="file-preview" class="hidden mb-2 bg-white border-l-4 border-[#00a884] px-3 py-2 rounded-lg flex justify-between items-center">
-                <p class="text-xs text-[#374151] truncate" id="file-preview-nama"></p>
-                <button type="button" id="btn-batal-file" class="text-[#667781] hover:text-[#f87171] text-sm ml-2">✕</button>
+            <div id="file-preview" class="hidden mb-2 bg-white border-l-4 border-[#1E3A8A] px-3 py-2 rounded-lg flex justify-between items-center">
+                <p class="text-xs text-[#1E3A8A] truncate" id="file-preview-nama"></p>
+                <button type="button" id="btn-batal-file" class="text-[#64748b] hover:text-[#f87171] text-sm ml-2">✕</button>
             </div>
 
-            <div id="reply-preview" class="hidden mb-2 bg-white border-l-4 border-[#00a884] px-3 py-2 rounded-lg flex justify-between items-start">
+            <div id="reply-preview" class="hidden mb-2 bg-white border-l-4 border-[#1E3A8A] px-3 py-2 rounded-lg flex justify-between items-start">
                 <div class="min-w-0">
-                    <p class="text-xs font-semibold text-[#00a884]" id="reply-nama"></p>
-                    <p class="text-xs text-[#667781] truncate" id="reply-isi"></p>
+                    <p class="text-xs font-semibold text-[#60A5FA]" id="reply-nama"></p>
+                    <p class="text-xs text-[#64748b] truncate" id="reply-isi"></p>
                 </div>
-                <button type="button" id="btn-batal-reply" class="text-[#667781] hover:text-[#f87171] text-sm ml-2 shrink-0">✕</button>
+                <button type="button" id="btn-batal-reply" class="text-[#64748b] hover:text-[#f87171] text-sm ml-2 shrink-0">✕</button>
             </div>
 
             <form id="form-pesan" class="flex gap-2 items-center">
                 <label for="input-file"
-                    class="cursor-pointer w-10 h-10 shrink-0 flex items-center justify-center rounded-full text-[#667781] hover:text-[#111b21] hover:bg-[#e9edef] transition {{ $konsultasi->status === 'selesai' ? 'opacity-40 pointer-events-none' : '' }}"
+                    class="cursor-pointer w-10 h-10 shrink-0 flex items-center justify-center rounded-full text-[#64748b] hover:text-[#172b45] hover:bg-[#e8eef5] transition {{ $konsultasi->status === 'selesai' ? 'opacity-40 pointer-events-none' : '' }}"
                     title="Kirim file/foto">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
@@ -370,7 +379,7 @@
             wrapper.appendChild(btnReply);
 
             const inner = document.createElement('div');
-            inner.className = 'pesan-bubble max-w-[88%] sm:max-w-[72%] lg:max-w-[60%] px-3 py-2 shadow-sm select-none ' +
+            inner.className = 'pesan-bubble max-w-[85%] sm:max-w-[68%] lg:max-w-[55%] px-2 py-1 shadow-sm select-none ' +
                 (milikSendiri ? 'wa-bubble-out' : 'wa-bubble-in');
             inner.style.webkitTouchCallout = 'none';
             inner.style.webkitUserSelect = 'none';
@@ -379,12 +388,12 @@
             if (balasKe) {
                 const kutipan = document.createElement('div');
                 kutipan.className = 'mb-1.5 pl-2 py-1 border-l-2 rounded ' +
-                    (milikSendiri ? 'border-[#00a884]/40 bg-[#d9fdd3]' : 'border-[#667781]/30 bg-[#f0f2f5]') + ' text-xs';
+                    (milikSendiri ? 'border-[#1E3A8A]/40 bg-[#1E3A8A]' : 'border-[#94a3b8]/30 bg-white') + ' text-xs';
                 const pNama = document.createElement('p');
-                pNama.className = 'font-semibold ' + (milikSendiri ? 'text-[#008069]' : 'text-[#008069]');
+                pNama.className = 'font-semibold ' + (milikSendiri ? 'text-[#bfdbfe]' : 'text-[#1E3A8A]');
                 pNama.textContent = balasKe.pengirim_nama;
                 const pIsi = document.createElement('p');
-                pIsi.className = 'truncate text-[#374151]/90';
+                pIsi.className = 'truncate ' + (milikSendiri ? 'text-white/80' : 'text-[#475569]');
                 pIsi.textContent = balasKe.isi_pesan || '[File]';
                 kutipan.appendChild(pNama);
                 kutipan.appendChild(pIsi);
@@ -392,30 +401,45 @@
             }
 
             if (fileUrl) {
-                const a = document.createElement('a');
-                a.href = fileUrl;
-                a.target = '_blank';
-                a.className = 'flex items-center gap-2 mb-1.5 px-3 py-2 rounded-lg ' +
-                    (milikSendiri ? 'bg-[#d9fdd3]' : 'bg-[#f0f2f5]');
-                const span1 = document.createElement('span');
-                span1.textContent = '📎';
-                const span2 = document.createElement('span');
-                span2.className = 'text-xs truncate text-[#111b21]';
-                span2.textContent = fileNama || 'File';
-                a.appendChild(span1);
-                a.appendChild(span2);
-                inner.appendChild(a);
+                const isImage = (fileTipe || '').startsWith('image/');
+                if (isImage) {
+                    const a = document.createElement('a');
+                    a.href = fileUrl;
+                    a.target = '_blank';
+                    a.className = 'block mb-1.5';
+                    const img = document.createElement('img');
+                    img.src = fileUrl;
+                    img.alt = fileNama || 'Gambar';
+                    img.className = 'rounded-lg max-w-[240px] max-h-[240px] w-auto h-auto object-cover border border-white/10';
+                    img.loading = 'lazy';
+                    a.appendChild(img);
+                    inner.appendChild(a);
+                } else {
+                    const a = document.createElement('a');
+                    a.href = fileUrl;
+                    a.target = '_blank';
+                    a.className = 'flex items-center gap-2 mb-1.5 px-3 py-2 rounded-lg ' +
+                        (milikSendiri ? 'bg-[#1E3A8A]' : 'bg-white');
+                    const span1 = document.createElement('span');
+                    span1.textContent = '📎';
+                    const span2 = document.createElement('span');
+                    span2.className = 'text-xs truncate ' + (milikSendiri ? 'text-white' : 'text-[#172b45]');
+                    span2.textContent = fileNama || 'File';
+                    a.appendChild(span1);
+                    a.appendChild(span2);
+                    inner.appendChild(a);
+                }
             }
 
             if (isiPesan) {
                 const p1 = document.createElement('p');
-                p1.className = 'text-[14.5px] leading-relaxed pesan-isi whitespace-pre-wrap break-words';
+                p1.className = 'text-[13.5px] leading-snug pesan-isi whitespace-pre-wrap break-words';
                 p1.textContent = isiPesan;
                 inner.appendChild(p1);
             }
 
             const p2 = document.createElement('p');
-            p2.className = 'text-[11px] wa-bubble-meta mt-1 text-right';
+            p2.className = 'text-[10px] wa-bubble-meta mt-0.5 text-right';
             p2.textContent = waktu;
             if (milikSendiri) {
                 const statusBaca = document.createElement('span');
@@ -618,7 +642,7 @@
                     if (e.pembaca_id === userId) return;
                     document.querySelectorAll('[data-milik-sendiri="1"] .status-baca').forEach(el => {
                     el.textContent = ' ✓✓';
-                    el.classList.add('text-[#53bdeb]');
+                    el.classList.add('text-[#93c5fd]');
                     });
                 });
 
