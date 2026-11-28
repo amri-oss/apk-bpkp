@@ -26,7 +26,10 @@ class PesanController extends Controller
 
         $query = $konsultasi->pesans()
             ->where('id', '>', $after)
-            ->where('disembunyikan_oleh_pengirim', false)
+            ->where(function ($q) use ($user) {
+                $q->where('disembunyikan_oleh_pengirim', false)
+                    ->orWhere('pengirim_id', '!=', $user->id);
+            })
             ->with(['pengirim', 'balasKe.pengirim'])
             ->orderBy('id');
 
@@ -58,7 +61,30 @@ class PesanController extends Controller
         return response()->json([
             'pesans' => $pesans,
             'status' => $konsultasi->status,
+            // ID pesan milik sendiri terakhir yang sudah dibaca lawan bicara,
+            // dipakai frontend untuk memperbarui ceklis dua tanpa reload.
+            'dibaca_hingga' => (int) $konsultasi->pesans()
+                ->where('pengirim_id', $user->id)
+                ->whereNotNull('dibaca_at')
+                ->max('id'),
         ]);
+    }
+
+    /**
+     * Tandai semua pesan lawan bicara pada konsultasi ini sebagai sudah dibaca.
+     */
+    public function dibaca(Konsultasi $konsultasi)
+    {
+        $user = Auth::user();
+
+        abort_unless(
+            $konsultasi->audiens_id === $user->id || $konsultasi->konsultan_id === $user->id,
+            403
+        );
+
+        app(KonsultasiController::class)->tandaiDibaca($konsultasi->load('pesans'), $user->id);
+
+        return response()->json(['success' => true]);
     }
 
     public function store(Request $request, Konsultasi $konsultasi)

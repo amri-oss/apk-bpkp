@@ -159,7 +159,16 @@ class KonsultasiController extends Controller
             ->whereNull('dibaca_at');
 
         if ($belumDibaca->isNotEmpty()) {
-            Pesan::whereIn('id', $belumDibaca->pluck('id'))->update(['dibaca_at' => now()]);
+            $waktu = now();
+
+            Pesan::whereIn('id', $belumDibaca->pluck('id'))->update(['dibaca_at' => $waktu]);
+
+            // Sinkronkan model di memori supaya badge pada daftar obrolan
+            // langsung hilang tanpa perlu memuat ulang relasi.
+            $belumDibaca->each(function ($pesan) use ($waktu) {
+                $pesan->dibaca_at = $waktu;
+            });
+
             try {
                 broadcast(new PesanDibaca($konsultasi->id, $userId))->toOthers();
             } catch (\Throwable $e) {

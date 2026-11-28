@@ -44,25 +44,50 @@ class DashboardController extends Controller
 
         $konsultasis = $user->konsultasiSebagaiAudiens()
             ->where('disembunyikan_oleh_audiens', false)
-            ->with(['konsultan', 'pesans'])
-            ->latest()
+            ->with(['konsultan', 'topik', 'pesans'])
             ->get();
+
+        // Urutkan berdasarkan pesan terakhir supaya percakapan yang paling
+        // aktif selalu muncul paling atas, termasuk yang sudah selesai.
+        $konsultasis = Konsultasi::urutkanBerdasarkanAktivitas($konsultasis, $user->id);
 
         $konsultasiAktif = null;
 
-        if ($konsultasi) {
-            abort_unless($konsultasi->audiens_id === $user->id, 403);
+        // Kalau belum pilih obrolan, otomatis tampilkan yang paling baru.
+        // Kecuali ?daftar=1 (tombol kembali di mobile) yang hanya ingin daftar.
+        $dipilih = $konsultasi ?? (request()->boolean('daftar') ? null : $konsultasis->first());
 
-            $konsultasi->load(['pesans' => function ($query) use ($user) {
-                $query->where(function ($q) use ($user) {
-                    $q->where('disembunyikan_oleh_pengirim', false)
-                      ->orWhere('pengirim_id', '!=', $user->id);
-                })->orderBy('created_at');
-            }, 'pesans.pengirim', 'pesans.balasKe.pengirim', 'audiens', 'konsultan', 'topik']);
+        if ($dipilih) {
+            abort_unless($dipilih->audiens_id === $user->id, 403);
 
-            app(KonsultasiController::class)->tandaiDibaca($konsultasi, $user->id);
+            $dipilih->load([
+                'pesans' => function ($query) use ($user, $dipilih) {
+                    $query->where(function ($q) use ($user) {
+                        $q->where('disembunyikan_oleh_pengirim', false)
+                            ->orWhere('pengirim_id', '!=', $user->id);
+                    });
 
-            $konsultasiAktif = $konsultasi;
+                    if ($dipilih->dibersihkan_audiens_pada) {
+                        $query->where('created_at', '>', $dipilih->dibersihkan_audiens_pada);
+                    }
+
+                    $query->orderBy('created_at');
+                },
+                'pesans.pengirim',
+                'pesans.balasKe.pengirim',
+                'audiens',
+                'konsultan',
+                'topik',
+            ]);
+
+            app(KonsultasiController::class)->tandaiDibaca($dipilih, $user->id);
+
+            $konsultasiAktif = $dipilih;
+
+            // Pakai instance yang sama di daftar agar badge belum dibaca langsung hilang
+            $konsultasis = $konsultasis
+                ->map(fn ($item) => $item->id === $dipilih->id ? $dipilih : $item)
+                ->values();
         }
 
         return view('audiens.konsultasi-saya', compact('konsultasis', 'konsultasiAktif'));

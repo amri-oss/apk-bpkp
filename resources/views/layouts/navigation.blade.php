@@ -36,6 +36,49 @@
         'audiens' => 'Audiens',
         default => ucfirst((string) $role),
     };
+
+    // Notifikasi chat masuk (hanya untuk peserta konsultasi)
+    $totalBelumDibaca = 0;
+    $ringkasanNotif = collect();
+
+    if ($role !== 'admin') {
+        $queryBelumDibaca = \App\Models\Pesan::belumDibacaOleh($user);
+        $totalBelumDibaca = (clone $queryBelumDibaca)->count();
+
+        if ($totalBelumDibaca > 0) {
+            $ringkasan = (clone $queryBelumDibaca)
+                ->selectRaw('pesans.konsultasi_id as konsultasi_id, COUNT(*) as jumlah, MAX(pesans.created_at) as terakhir')
+                ->groupBy('pesans.konsultasi_id')
+                ->orderByRaw('MAX(pesans.created_at) DESC')
+                ->limit(5)
+                ->get();
+
+            $daftarKonsultasi = \App\Models\Konsultasi::with(['audiens', 'konsultan'])
+                ->whereIn('id', $ringkasan->pluck('konsultasi_id'))
+                ->get()
+                ->keyBy('id');
+
+            $ringkasanNotif = $ringkasan->map(function ($baris) use ($daftarKonsultasi, $role) {
+                $konsultasi = $daftarKonsultasi->get($baris->konsultasi_id);
+
+                if (!$konsultasi) {
+                    return null;
+                }
+
+                $lawan = $role === 'konsultan' ? $konsultasi->audiens : $konsultasi->konsultan;
+
+                return [
+                    'nama' => $lawan->name ?? 'Pengguna',
+                    'inisial' => strtoupper(substr($lawan->name ?? '?', 0, 1)),
+                    'jumlah' => (int) $baris->jumlah,
+                    'waktu' => \Illuminate\Support\Carbon::parse($baris->terakhir),
+                    'url' => $role === 'konsultan'
+                        ? route('konsultan.obrolan', $konsultasi->id)
+                        : route('audiens.konsultasi-saya', $konsultasi->id),
+                ];
+            })->filter()->values();
+        }
+    }
 @endphp
 
 <style>
@@ -79,7 +122,11 @@
                         @click="notifOpen = !notifOpen; profileOpen = false"
                         class="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-[#60A5FA]/50 hover:text-[#1E3A8A] focus:outline-none focus:ring-2 focus:ring-[#60A5FA]/30"
                         aria-haspopup="menu" :aria-expanded="notifOpen.toString()" aria-label="Notifikasi">
-                    <span class="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+                    @if ($totalBelumDibaca > 0)
+                        <span class="absolute -right-1 -top-1 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-white">
+                            {{ $totalBelumDibaca > 99 ? '99+' : $totalBelumDibaca }}
+                        </span>
+                    @endif
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/>
                     </svg>
@@ -98,18 +145,41 @@
                         <h6 class="text-sm font-semibold text-slate-900">Notifikasi</h6>
                     </div>
                     <div class="max-h-72 overflow-auto py-1">
-                        <div class="flex items-start gap-3 px-4 py-3 hover:bg-slate-50">
-                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1E3A8A]/10 text-[#1E3A8A]">
-                                <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                        @forelse ($ringkasanNotif as $notif)
+                            <a href="{{ $notif['url'] }}" class="flex items-start gap-3 px-4 py-3 transition hover:bg-slate-50">
+                                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1E3A8A]/10 text-sm font-semibold text-[#1E3A8A]">
+                                    {{ $notif['inisial'] }}
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <p class="truncate text-sm font-medium text-slate-900">{{ $notif['nama'] }}</p>
+                                    <p class="mt-0.5 text-xs text-slate-500">
+                                        {{ $notif['jumlah'] }} pesan belum dibaca
+                                        · {{ $notif['waktu']->isToday() ? $notif['waktu']->format('H:i') : $notif['waktu']->format('d/m') }}
+                                    </p>
+                                </div>
+                                <span class="mt-1 inline-flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-[#1E3A8A] px-1 text-[10px] font-bold leading-none text-white">
+                                    {{ $notif['jumlah'] > 99 ? '99+' : $notif['jumlah'] }}
+                                </span>
+                            </a>
+                        @empty
+                            <div class="flex items-start gap-3 px-4 py-3 hover:bg-slate-50">
+                                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1E3A8A]/10 text-[#1E3A8A]">
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <p class="truncate text-sm font-medium text-slate-900">Belum ada notifikasi baru</p>
+                                    <p class="mt-0.5 text-xs text-slate-500">Aktivitas terbaru akan muncul di sini.</p>
+                                </div>
                             </div>
-                            <div class="min-w-0 flex-1">
-                                <p class="truncate text-sm font-medium text-slate-900">Belum ada notifikasi baru</p>
-                                <p class="mt-0.5 text-xs text-slate-500">Aktivitas terbaru akan muncul di sini.</p>
-                            </div>
-                        </div>
+                        @endforelse
                     </div>
                     <div class="border-t border-slate-100 px-4 py-2.5 text-center">
-                        <span class="text-xs font-medium text-slate-400">Pusat notifikasi</span>
+                        @if ($ringkasanNotif->isNotEmpty())
+                            <a href="{{ $role === 'konsultan' ? route('konsultan.obrolan', ['daftar' => 1]) : route('audiens.konsultasi-saya') }}"
+                               class="text-xs font-semibold text-[#1E3A8A] hover:underline">Lihat semua obrolan</a>
+                        @else
+                            <span class="text-xs font-medium text-slate-400">Pusat notifikasi</span>
+                        @endif
                     </div>
                 </div>
             </div>

@@ -18,8 +18,9 @@
 
         @php
             $lawanBicara = $k->{$sisi};
-            $pesanTerakhir = $k->pesans->last();
-            $belumDibaca = $k->pesans->where('pengirim_id', '!=', auth()->id())->whereNull('dibaca_at')->count();
+            $pesanTerakhir = $k->pesanTerakhirUntuk(auth()->id());
+            $belumDibaca = $k->jumlahBelumDibacaUntuk(auth()->id());
+            $waktuTerakhir = $pesanTerakhir?->created_at ?? $k->created_at;
             $sedangDibuka = isset($aktifId) && (int) $aktifId === $k->id;
             $statusLabel = ucfirst($k->status ?? 'menunggu');
             $statusColor = match($k->status) {
@@ -48,9 +49,9 @@
                 <div class="min-w-0 flex-1 mr-8">
                     <div class="flex items-center justify-between gap-2">
                         <p class="wa-chat-name font-medium text-[12px] leading-tight truncate">{{ $lawanBicara->name ?? 'Pengguna' }}</p>
-                        @if ($k->updated_at)
+                        @if ($waktuTerakhir)
                             <span class="wa-chat-meta text-[9px] leading-tight shrink-0 {{ $belumDibaca > 0 ? 'text-[#00a884]' : '' }}">
-                                {{ $k->updated_at->format('H:i') }}
+                                {{ $waktuTerakhir->isToday() ? $waktuTerakhir->format('H:i') : $waktuTerakhir->format('d/m') }}
                             </span>
                         @endif
                     </div>
@@ -58,7 +59,7 @@
                     <div class="flex items-center gap-2 mt-0.5 min-w-0">
                         <p class="wa-chat-preview text-[10px] leading-tight truncate flex-1">
                             @if ($pesanTerakhir)
-                                {{ $pesanTerakhir->isi_pesan ?? '📎 File' }}
+                                {{ $pesanTerakhir->isi_pesan ?: '📎 File' }}
                             @else
                                 <span class="italic">Belum ada pesan</span>
                             @endif

@@ -25,7 +25,7 @@
         <div class="flex items-center justify-between gap-3">
             <div class="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
                 @if ($showBack ?? false)
-                    <a href="{{ auth()->user()->role === 'konsultan' ? route('konsultan.obrolan', ['daftar' => 1]) : route('audiens.konsultasi-saya') }}"
+                    <a href="{{ auth()->user()->role === 'konsultan' ? route('konsultan.obrolan', ['daftar' => 1]) : route('audiens.konsultasi-saya', ['daftar' => 1]) }}"
                        class="sm:hidden shrink-0 inline-flex items-center justify-center w-9 h-9 -ml-1 rounded-full text-[#64748b] hover:bg-[#e8eef5] transition"
                        aria-label="Kembali ke daftar">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -325,6 +325,36 @@
         }
         const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
+        // Perbarui ceklis dua pada bubble milik sendiri.
+        // hinggaId = ID pesan terakhir yang sudah dibaca lawan bicara.
+        function tandaiBubbleTerbaca(hinggaId) {
+            document.querySelectorAll('[data-milik-sendiri="1"]').forEach(function (el) {
+                const id = parseInt(el.dataset.id, 10);
+                if (isNaN(id)) return;
+                if (hinggaId !== undefined && id > hinggaId) return;
+
+                const status = el.querySelector('.status-baca');
+                if (!status) return;
+
+                status.textContent = ' ✓✓';
+                status.classList.add('text-[#93c5fd]');
+            });
+        }
+
+        // Kabari server bahwa pesan lawan bicara sudah dilihat (ceklis dua untuk pengirim).
+        async function tandaiDibacaKeServer() {
+            try {
+                await fetch(`/konsultasi/${konsultasiId}/dibaca`, {
+                    method: 'PATCH',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+            } catch (e) { /* silent */ }
+        }
+
         const replyPreview = document.getElementById('reply-preview');
         const replyNama = document.getElementById('reply-nama');
         const replyIsi = document.getElementById('reply-isi');
@@ -370,7 +400,7 @@
             return false;
         }
 
-        function buatBubble(id, isiPesan, waktu, pengirimId, namaPengirim, balasKe, fileUrl, fileNama, fileTipe) {
+        function buatBubble(id, isiPesan, waktu, pengirimId, namaPengirim, balasKe, fileUrl, fileNama, fileTipe, dibaca) {
             const milikSendiri = pengirimId === userId;
 
             const wrapper = document.createElement('div');
@@ -453,8 +483,8 @@
             p2.textContent = waktu;
             if (milikSendiri) {
                 const statusBaca = document.createElement('span');
-                statusBaca.className = 'status-baca';
-                statusBaca.textContent = ' ✓';
+                statusBaca.className = 'status-baca' + (dibaca ? ' text-[#93c5fd]' : '');
+                statusBaca.textContent = dibaca ? ' ✓✓' : ' ✓';
                 p2.appendChild(statusBaca);
             }
             inner.appendChild(p2);
@@ -647,13 +677,11 @@
                 .listen('.PesanDikirim', (e) => {
                     if (e.pengirim_id === userId) return;
                     buatBubble(e.id, e.isi_pesan, e.waktu, e.pengirim_id, e.pengirim_nama, e.balas_ke, e.file_url, e.file_nama, e.file_tipe);
+                    tandaiDibacaKeServer();
                 })
                 .listen('.PesanDibaca', (e) => {
                     if (e.pembaca_id === userId) return;
-                    document.querySelectorAll('[data-milik-sendiri="1"] .status-baca').forEach(el => {
-                    el.textContent = ' ✓✓';
-                    el.classList.add('text-[#93c5fd]');
-                    });
+                    tandaiBubbleTerbaca();
                 });
 
             window.Echo.private(`user.${userId}`)
@@ -697,15 +725,21 @@
                     return;
                 }
                 if (Array.isArray(data.pesans)) {
+                    let adaPesanMasuk = false;
                     data.pesans.forEach(p => {
                         if (document.getElementById(`pesan-${p.id}`)) {
                             if (p.id > lastId) lastId = p.id;
                             return;
                         }
-                        buatBubble(p.id, p.isi_pesan, p.waktu, p.pengirim_id, p.pengirim_nama, p.balas_ke, p.file_url, p.file_nama, p.file_tipe);
+                        buatBubble(p.id, p.isi_pesan, p.waktu, p.pengirim_id, p.pengirim_nama, p.balas_ke, p.file_url, p.file_nama, p.file_tipe, p.pengirim_id === userId ? p.dibaca : false);
+                        if (p.pengirim_id !== userId) adaPesanMasuk = true;
                         if (p.id > lastId) lastId = p.id;
                     });
                     if (data.pesans.length) gulirKeBawah(false);
+                    if (adaPesanMasuk) tandaiDibacaKeServer();
+                }
+                if (typeof data.dibaca_hingga === 'number') {
+                    tandaiBubbleTerbaca(data.dibaca_hingga);
                 }
             } catch (e) { /* silent */ }
         }
