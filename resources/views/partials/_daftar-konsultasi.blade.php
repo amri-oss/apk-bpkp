@@ -31,7 +31,8 @@
             };
         @endphp
 
-        <div class="group relative wa-chat-item {{ $sedangDibuka ? 'is-active' : '' }}">
+        <div class="group relative wa-chat-item {{ $sedangDibuka ? 'is-active' : '' }}"
+             data-cari="{{ strtolower(($lawanBicara->name ?? '') . ' ' . $k->label_konsultasi) }}">
             <a href="{{ route($rutaChat ?? 'konsultasi.show', $k->id) }}"
                 class="flex items-center gap-1.5 min-w-0" style="padding: 4px 8px 4px 8px;">
 
@@ -66,7 +67,13 @@
                         </p>
                     </div>
 
-                    <p class="text-[9px] leading-tight mt-0.5 font-medium {{ $statusColor }}">{{ $statusLabel }}</p>
+                    <div class="flex items-center justify-between gap-2 mt-0.5 min-w-0">
+                        <p class="text-[9px] leading-tight font-medium shrink-0 {{ $statusColor }}">{{ $statusLabel }}</p>
+                        <p class="wa-chat-id text-[9px] leading-tight text-[#667781] truncate"
+                           title="ID Konsul: {{ $k->label_konsultasi }}">
+                            ID: {{ $k->label_konsultasi }}
+                        </p>
+                    </div>
                 </div>
             </a>
 

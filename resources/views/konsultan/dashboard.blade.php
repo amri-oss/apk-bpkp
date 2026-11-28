@@ -70,6 +70,7 @@
                             <div class="konsultasi-item cursor-pointer rounded-lg p-2 transition-all duration-150 border flex items-center gap-2 {{ $isInitialActive ? 'bg-[#1E3A8A] text-white border-[#1E3A8A] shadow-md ring-2 ring-[#60A5FA] ring-offset-2' : 'bg-white text-gray-800 border-gray-200 hover:border-[#60A5FA] hover:shadow-sm' }}"
                                 data-id="{{ $k->id }}"
                                 data-nama="{{ strtolower($k->audiens->name) }}"
+                                data-cari="{{ strtolower($k->audiens->name . ' ' . $k->label_konsultasi) }}"
                                 onclick="pilihKonsultasi({{ $k->id }})">
 
                                 {{-- Avatar --}}
@@ -101,6 +102,9 @@
                                             </span>
                                         @endif
                                     </div>
+                                    <p class="text-[9px] leading-tight mt-0.5 truncate text-item-sub {{ $isInitialActive ? 'text-blue-100' : 'text-gray-500' }}">
+                                        ID: {{ $k->label_konsultasi }}
+                                    </p>
                                 </div>
 
                                 {{-- Waktu & Panah --}}
@@ -163,6 +167,9 @@
                                         </div>
                                         <div class="min-w-0 flex-1">
                                             <p class="font-bold text-gray-900 text-base truncate">{{ $k->audiens->name }}</p>
+                                            <p class="text-[11px] text-gray-500 mt-0.5 truncate">
+                                                ID Konsul: <span class="font-semibold text-gray-700">{{ $k->label_konsultasi }}</span>
+                                            </p>
                                             <div class="flex items-center gap-1.5 mt-0.5">
                                                 <span class="w-2 h-2 rounded-full bg-green-500"></span>
                                                 <p class="text-xs text-green-700 font-medium">Online</p>
@@ -456,8 +463,8 @@
                 inputCari.addEventListener('input', function () {
                     const kata = this.value.trim().toLowerCase();
                     daftar.querySelectorAll('.konsultasi-item').forEach(function (item) {
-                        const match = item.dataset.nama.includes(kata);
-                        item.style.display = match ? '' : 'none';
+                        const teks = (item.dataset.cari || item.dataset.nama || '').toLowerCase();
+                        item.style.display = teks.includes(kata) ? '' : 'none';
                     });
                 });
             }

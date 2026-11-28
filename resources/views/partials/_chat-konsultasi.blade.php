@@ -46,6 +46,9 @@
                         @endif
                     </div>
                     <p class="text-xs {{ $statusColor }} font-medium mt-0.5">{{ $statusLabel }}</p>
+                    <p class="text-[11px] text-[#64748b] mt-0.5 truncate">
+                        ID Konsul: <span class="font-semibold text-[#172b45]">{{ $konsultasi->label_konsultasi }}</span>
+                    </p>
                 </div>
             </div>
 

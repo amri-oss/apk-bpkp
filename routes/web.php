@@ -35,6 +35,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    Route::get('/aktivitas-konsultasi/versi', [KonsultasiController::class, 'versiAktivitas'])->name('aktivitas-konsultasi.versi');
     Route::get('/konsultasi/{konsultasi}', [KonsultasiController::class, 'show'])->name('konsultasi.show');
     Route::patch('/konsultasi/{konsultasi}/terima', [KonsultasiController::class, 'terima'])->name('konsultasi.terima');
     Route::patch('/konsultasi/{konsultasi}/tolak', [KonsultasiController::class, 'tolak'])->name('konsultasi.tolak');

@@ -44,7 +44,7 @@ class DashboardController extends Controller
 
         $konsultasis = $user->konsultasiSebagaiAudiens()
             ->where('disembunyikan_oleh_audiens', false)
-            ->with(['konsultan', 'topik', 'pesans'])
+            ->with(['audiens', 'konsultan', 'topik', 'pesans'])
             ->get();
 
         // Urutkan berdasarkan pesan terakhir supaya percakapan yang paling

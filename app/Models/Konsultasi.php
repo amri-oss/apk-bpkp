@@ -42,6 +42,55 @@ class Konsultasi extends Model
         return $this->belongsTo(Topik::class);
     }
 
+    /**
+     * Identitas konsultasi yang ditampilkan ke pengguna.
+     * Format: "Nama Audiens - ID Konsul".
+     */
+    public function getLabelKonsultasiAttribute(): string
+    {
+        return ($this->audiens?->name ?? 'Audiens') . ' - ' . $this->id;
+    }
+
+    /**
+     * Jenis respon atas pengajuan konsultasi.
+     */
+    public function jenisRespon(): ?string
+    {
+        if ($this->status === 'berlangsung') {
+            return 'disetujui';
+        }
+
+        if ($this->status === 'selesai') {
+            return filled($this->alasan_tolak) ? 'ditolak' : 'selesai';
+        }
+
+        return null;
+    }
+
+    public function judulRespon(): ?string
+    {
+        return match ($this->jenisRespon()) {
+            'disetujui' => 'Konsultasi disetujui',
+            'ditolak' => 'Konsultasi ditolak',
+            'selesai' => 'Konsultasi selesai',
+            default => null,
+        };
+    }
+
+    /**
+     * Versi ringkas aktivitas konsultasi untuk polling frontend.
+     * Perubahan status, alasan tolak, atau waktu update akan mengubah versi.
+     */
+    public static function versiAktivitasDari(\Illuminate\Support\Collection $konsultasis): string
+    {
+        return md5($konsultasis->map(function (Konsultasi $konsultasi) {
+            return $konsultasi->id
+                . ':' . $konsultasi->status
+                . ':' . ($konsultasi->alasan_tolak ?? '')
+                . ':' . ($konsultasi->updated_at?->getTimestamp() ?? 0);
+        })->implode('|'));
+    }
+
     public function pesans()
     {
         return $this->hasMany(Pesan::class)->orderBy('created_at');

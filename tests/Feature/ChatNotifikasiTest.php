@@ -69,6 +69,59 @@ class ChatNotifikasiTest extends TestCase
         $this->assertMatchesRegularExpression('/-right-1 -top-1[^>]*>\s*3\s*</', $html);
     }
 
+    public function test_notifikasi_menampilkan_respon_konsultasi_dan_id_konsul(): void
+    {
+        $audiens = User::factory()->create(['role' => 'audiens', 'name' => 'Rizka']);
+        $konsultan = User::factory()->create(['role' => 'konsultan', 'name' => 'Konsultan Uji']);
+
+        $disetujui = $this->buatKonsultasi($audiens, $konsultan, 'berlangsung');
+        $ditolak = $this->buatKonsultasi($audiens, $konsultan, 'selesai');
+        $ditolak->update(['alasan_tolak' => 'Dokumen belum lengkap']);
+        $selesai = $this->buatKonsultasi($audiens, $konsultan, 'selesai');
+
+        $html = $this->actingAs($audiens)
+            ->get(route('audiens.konsultasi-saya'))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString('Konsultasi disetujui', $html);
+        $this->assertStringContainsString('Konsultasi ditolak', $html);
+        $this->assertStringContainsString('Konsultasi selesai', $html);
+        $this->assertStringContainsString('ID Konsul: Rizka - ' . $disetujui->id, $html);
+        $this->assertStringContainsString('ID Konsul: Rizka - ' . $ditolak->id, $html);
+        $this->assertStringContainsString('ID Konsul: Rizka - ' . $selesai->id, $html);
+        $this->assertStringContainsString('Dokumen belum lengkap', $html);
+    }
+
+    public function test_sidebar_dan_header_menampilkan_id_konsul(): void
+    {
+        $audiens = User::factory()->create(['role' => 'audiens', 'name' => 'Rizka']);
+        $konsultan = User::factory()->create(['role' => 'konsultan', 'name' => 'Konsultan Uji']);
+
+        $konsultasi = $this->buatKonsultasi($audiens, $konsultan);
+
+        $this->actingAs($audiens)
+            ->get(route('audiens.konsultasi-saya', $konsultasi))
+            ->assertOk()
+            ->assertSee('ID: Rizka - ' . $konsultasi->id)
+            ->assertSee('ID Konsul: Rizka - ' . $konsultasi->id);
+    }
+
+    public function test_dashboard_konsultan_menampilkan_id_konsul(): void
+    {
+        $audiens = User::factory()->create(['role' => 'audiens', 'name' => 'Audiens Uji']);
+        $konsultan = User::factory()->create(['role' => 'konsultan', 'name' => 'Konsultan Uji']);
+
+        $konsultasi = $this->buatKonsultasi($audiens, $konsultan, 'menunggu');
+
+        $this->actingAs($konsultan)
+            ->get(route('konsultan.dashboard'))
+            ->assertOk()
+            ->assertSee('ID: Audiens Uji - ' . $konsultasi->id)
+            ->assertSee('ID Konsul:')
+            ->assertSee('Audiens Uji - ' . $konsultasi->id);
+    }
+
     public function test_membuka_obrolan_konsultan_menandai_pesan_terbaca_dan_badge_hilang(): void
     {
         [$audiens, $konsultan] = $this->pasangan();
@@ -180,6 +233,81 @@ class ChatNotifikasiTest extends TestCase
             ->get(route('audiens.konsultasi-saya', ['daftar' => 1]))
             ->assertOk()
             ->assertDontSee('wa-thread');
+    }
+
+    public function test_halaman_peserta_menyertakan_polling_aktivitas_konsultasi(): void
+    {
+        [$audiens, $konsultan] = $this->pasangan();
+
+        $this->actingAs($audiens)
+            ->get(route('audiens.konsultasi-saya'))
+            ->assertOk()
+            ->assertSee('aktivitas-konsultasi/versi', false);
+
+        $this->actingAs($konsultan)
+            ->get(route('konsultan.dashboard'))
+            ->assertOk()
+            ->assertSee('aktivitas-konsultasi/versi', false);
+    }
+
+    public function test_terima_konsultasi_membuat_balasan_otomatis_dari_konsultan(): void
+    {
+        [$audiens, $konsultan] = $this->pasangan();
+
+        $konsultasi = $this->buatKonsultasi($audiens, $konsultan, 'menunggu');
+
+        $this->actingAs($konsultan)
+            ->patch(route('konsultasi.terima', $konsultasi))
+            ->assertRedirect(route('konsultan.obrolan', $konsultasi->id));
+
+        $this->assertSame('berlangsung', $konsultasi->fresh()->status);
+
+        $balasan = $konsultasi->pesans()->first();
+
+        $this->assertNotNull($balasan);
+        $this->assertSame($konsultan->id, $balasan->pengirim_id);
+        $this->assertSame(
+            'Konsultasi Anda telah disetujui. Silakan sampaikan pertanyaan Anda. Kami siap membantu.',
+            $balasan->isi_pesan
+        );
+
+        $this->actingAs($audiens)
+            ->get(route('audiens.konsultasi-saya', $konsultasi))
+            ->assertOk()
+            ->assertSee('Konsultasi Anda telah disetujui. Silakan sampaikan pertanyaan Anda. Kami siap membantu.');
+    }
+
+    public function test_terima_ulang_tidak_membuat_balasan_otomatis_ganda(): void
+    {
+        [$audiens, $konsultan] = $this->pasangan();
+
+        $konsultasi = $this->buatKonsultasi($audiens, $konsultan, 'menunggu');
+
+        $this->actingAs($konsultan)->patch(route('konsultasi.terima', $konsultasi))->assertRedirect();
+        $this->actingAs($konsultan)->patch(route('konsultasi.terima', $konsultasi))->assertRedirect();
+
+        $this->assertSame(1, $konsultasi->pesans()->count());
+    }
+
+    public function test_versi_aktivitas_berubah_ketika_status_konsultasi_diubah(): void
+    {
+        [$audiens, $konsultan] = $this->pasangan();
+
+        $konsultasi = $this->buatKonsultasi($audiens, $konsultan, 'menunggu');
+
+        $versiAwal = $this->actingAs($audiens)
+            ->getJson(route('aktivitas-konsultasi.versi'))
+            ->assertOk()
+            ->json('versi');
+
+        $konsultasi->update(['status' => 'berlangsung']);
+
+        $versiBaru = $this->actingAs($audiens)
+            ->getJson(route('aktivitas-konsultasi.versi'))
+            ->assertOk()
+            ->json('versi');
+
+        $this->assertNotSame($versiAwal, $versiBaru);
     }
 
     public function test_pratinjau_obrolan_yang_sudah_dibersihkan_tidak_menampilkan_pesan_lama(): void

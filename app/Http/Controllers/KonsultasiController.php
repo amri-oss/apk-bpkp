@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Events\AktivitasKonsultasi;
 use App\Events\PesanDibaca;
+use App\Events\PesanDikirim;
 use App\Models\Konsultasi;
 use App\Models\Pesan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class KonsultasiController extends Controller
@@ -41,6 +43,31 @@ class KonsultasiController extends Controller
         $this->tandaiDibaca($konsultasi, $user->id);
 
         return view('konsultasi.show', compact('konsultasi'));
+    }
+
+    /**
+     * Versi ringkas aktivitas konsultasi untuk polling frontend.
+     * Dipakai agar status/respon terbaru tampil tanpa refresh manual.
+     */
+    public function versiAktivitas()
+    {
+        $user = Auth::user();
+
+        $konsultasis = Konsultasi::query()
+            ->where(function ($query) use ($user) {
+                $query->where(function ($q) use ($user) {
+                    $q->where('audiens_id', $user->id)
+                        ->where('disembunyikan_oleh_audiens', false);
+                })->orWhere(function ($q) use ($user) {
+                    $q->where('konsultan_id', $user->id)
+                        ->where('disembunyikan_oleh_konsultan', false);
+                });
+            })
+            ->get(['id', 'status', 'alasan_tolak', 'updated_at']);
+
+        return response()->json([
+            'versi' => Konsultasi::versiAktivitasDari($konsultasis),
+        ]);
     }
 
     public function destroy(Konsultasi $konsultasi)
@@ -81,7 +108,38 @@ class KonsultasiController extends Controller
 
         abort_unless($konsultasi->konsultan_id === $user->id, 403);
 
-        $konsultasi->update(['status' => 'berlangsung']);
+        // Kunci baris agar klik ganda tidak membuat balasan otomatis ganda.
+        $pesanPersetujuan = DB::transaction(function () use ($konsultasi, $user) {
+            $terkunci = Konsultasi::whereKey($konsultasi->id)->lockForUpdate()->first();
+
+            if (!$terkunci || $terkunci->status !== 'menunggu') {
+                return null;
+            }
+
+            $terkunci->update(['status' => 'berlangsung']);
+
+            return Pesan::create([
+                'konsultasi_id' => $terkunci->id,
+                'pengirim_id' => $user->id,
+                'isi_pesan' => 'Konsultasi Anda telah disetujui. Silakan sampaikan pertanyaan Anda. Kami siap membantu.',
+            ]);
+        });
+
+        $konsultasi->refresh();
+
+        // Pertahankan perilaku lama: permintaan yang belum berlangsung
+        // tetap diubah menjadi berlangsung.
+        if (!$pesanPersetujuan && $konsultasi->status !== 'berlangsung') {
+            $konsultasi->update(['status' => 'berlangsung']);
+        }
+
+        if ($pesanPersetujuan) {
+            try {
+                broadcast(new PesanDikirim($pesanPersetujuan))->toOthers();
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
 
         try {
             broadcast(new AktivitasKonsultasi($konsultasi->audiens_id, $konsultasi->id, 'status'))->toOthers();

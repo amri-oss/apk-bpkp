@@ -41,6 +41,14 @@
     $totalBelumDibaca = 0;
     $ringkasanNotif = collect();
 
+    // Notifikasi respon konsultasi: disetujui, ditolak, atau selesai.
+    $ringkasanRespon = collect();
+    $adaResponBaru = false;
+
+    // Versi aktivitas dipakai polling ringan agar status/respon konsultasi
+    // langsung tampil tanpa perlu refresh manual.
+    $versiAktivitas = null;
+
     if ($role !== 'admin') {
         $queryBelumDibaca = \App\Models\Pesan::belumDibacaOleh($user);
         $totalBelumDibaca = (clone $queryBelumDibaca)->count();
@@ -70,6 +78,7 @@
                 return [
                     'nama' => $lawan->name ?? 'Pengguna',
                     'inisial' => strtoupper(substr($lawan->name ?? '?', 0, 1)),
+                    'label' => $konsultasi->label_konsultasi,
                     'jumlah' => (int) $baris->jumlah,
                     'waktu' => \Illuminate\Support\Carbon::parse($baris->terakhir),
                     'url' => $role === 'konsultan'
@@ -78,6 +87,67 @@
                 ];
             })->filter()->values();
         }
+
+        $semuaKonsultasi = \App\Models\Konsultasi::with(['audiens', 'konsultan'])
+            ->where(function ($query) use ($user, $role) {
+                if ($role === 'konsultan') {
+                    $query->where('konsultan_id', $user->id)
+                        ->where('disembunyikan_oleh_konsultan', false);
+                } else {
+                    $query->where('audiens_id', $user->id)
+                        ->where('disembunyikan_oleh_audiens', false);
+                }
+            })
+            ->get();
+
+        $versiAktivitas = \App\Models\Konsultasi::versiAktivitasDari($semuaKonsultasi);
+
+        // Tampilkan respon terbaru (7 hari terakhir) agar tidak menumpuk
+        // dengan konsultasi lama yang sudah selesai.
+        $ringkasanRespon = $semuaKonsultasi
+            ->filter(fn ($konsultasi) => in_array($konsultasi->status, ['berlangsung', 'selesai'], true)
+                && $konsultasi->updated_at
+                && $konsultasi->updated_at->gte(now()->subDays(7)))
+            ->sortByDesc('updated_at')
+            ->take(5)
+            ->map(function ($konsultasi) use ($role) {
+                $jenis = $konsultasi->jenisRespon();
+
+                $warna = match ($jenis) {
+                    'disetujui' => 'emerald',
+                    'ditolak' => 'red',
+                    default => 'slate',
+                };
+
+                $keterangan = $role === 'konsultan'
+                    ? match ($jenis) {
+                        'disetujui' => 'Anda menyetujui permintaan ini',
+                        'ditolak' => 'Anda menolak permintaan ini',
+                        default => 'Audiens menandai konsultasi selesai',
+                    }
+                    : match ($jenis) {
+                        'disetujui' => 'Permintaan Anda disetujui konsultan',
+                        'ditolak' => 'Permintaan Anda ditolak konsultan',
+                        default => 'Konsultasi telah diselesaikan',
+                    };
+
+                return [
+                    'judul' => $konsultasi->judulRespon(),
+                    'label' => $konsultasi->label_konsultasi,
+                    'warna' => $warna,
+                    'keterangan' => $keterangan,
+                    'alasan' => $jenis === 'ditolak' ? $konsultasi->alasan_tolak : null,
+                    'waktu' => $konsultasi->updated_at,
+                    'url' => $role === 'konsultan'
+                        ? route('konsultan.obrolan', $konsultasi->id)
+                        : route('audiens.konsultasi-saya', $konsultasi->id),
+                ];
+            })
+            ->values();
+
+        $adaResponBaru = $ringkasanRespon->contains(
+            fn ($respon) => $respon['waktu'] && $respon['waktu']->gte(now()->subDay())
+        );
     }
 @endphp
 
@@ -126,6 +196,8 @@
                         <span class="absolute -right-1 -top-1 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-white">
                             {{ $totalBelumDibaca > 99 ? '99+' : $totalBelumDibaca }}
                         </span>
+                    @elseif ($adaResponBaru)
+                        <span class="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white" title="Ada respon konsultasi baru"></span>
                     @endif
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/>
@@ -144,24 +216,71 @@
                     <div class="border-b border-slate-100 px-4 py-3">
                         <h6 class="text-sm font-semibold text-slate-900">Notifikasi</h6>
                     </div>
-                    <div class="max-h-72 overflow-auto py-1">
-                        @forelse ($ringkasanNotif as $notif)
-                            <a href="{{ $notif['url'] }}" class="flex items-start gap-3 px-4 py-3 transition hover:bg-slate-50">
-                                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1E3A8A]/10 text-sm font-semibold text-[#1E3A8A]">
-                                    {{ $notif['inisial'] }}
-                                </div>
-                                <div class="min-w-0 flex-1">
-                                    <p class="truncate text-sm font-medium text-slate-900">{{ $notif['nama'] }}</p>
-                                    <p class="mt-0.5 text-xs text-slate-500">
-                                        {{ $notif['jumlah'] }} pesan belum dibaca
-                                        · {{ $notif['waktu']->isToday() ? $notif['waktu']->format('H:i') : $notif['waktu']->format('d/m') }}
-                                    </p>
-                                </div>
-                                <span class="mt-1 inline-flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-[#1E3A8A] px-1 text-[10px] font-bold leading-none text-white">
-                                    {{ $notif['jumlah'] > 99 ? '99+' : $notif['jumlah'] }}
-                                </span>
-                            </a>
-                        @empty
+                    <div class="max-h-80 overflow-auto py-1">
+                        @if ($ringkasanRespon->isNotEmpty())
+                            <div class="px-4 pb-1 pt-2">
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Respon Konsultasi</p>
+                            </div>
+                            @foreach ($ringkasanRespon as $respon)
+                                <a href="{{ $respon['url'] }}" class="flex items-start gap-3 px-4 py-2.5 transition hover:bg-slate-50">
+                                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full
+                                        {{ $respon['warna'] === 'emerald' ? 'bg-emerald-50 text-emerald-600' : ($respon['warna'] === 'red' ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-600') }}">
+                                        @if ($respon['warna'] === 'red')
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                        @elseif ($respon['warna'] === 'emerald')
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                        @else
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                            </svg>
+                                        @endif
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <p class="truncate text-sm font-semibold text-slate-900">{{ $respon['judul'] }}</p>
+                                        <p class="mt-0.5 truncate text-[11px] font-semibold text-[#1E3A8A]">ID Konsul: {{ $respon['label'] }}</p>
+                                        <p class="mt-0.5 text-xs text-slate-500">
+                                            {{ $respon['keterangan'] }}
+                                            · {{ $respon['waktu']->isToday() ? $respon['waktu']->format('H:i') : $respon['waktu']->format('d/m') }}
+                                        </p>
+                                        @if ($respon['alasan'])
+                                            <p class="mt-1 line-clamp-2 rounded-md bg-red-50 px-2 py-1 text-[11px] text-red-700">
+                                                Alasan: {{ $respon['alasan'] }}
+                                            </p>
+                                        @endif
+                                    </div>
+                                </a>
+                            @endforeach
+                        @endif
+
+                        @if ($ringkasanNotif->isNotEmpty())
+                            <div class="px-4 pb-1 pt-2 {{ $ringkasanRespon->isNotEmpty() ? 'mt-1 border-t border-slate-100' : '' }}">
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pesan Belum Dibaca</p>
+                            </div>
+                            @foreach ($ringkasanNotif as $notif)
+                                <a href="{{ $notif['url'] }}" class="flex items-start gap-3 px-4 py-2.5 transition hover:bg-slate-50">
+                                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#1E3A8A]/10 text-sm font-semibold text-[#1E3A8A]">
+                                        {{ $notif['inisial'] }}
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <p class="truncate text-sm font-medium text-slate-900">{{ $notif['nama'] }}</p>
+                                        <p class="mt-0.5 truncate text-[11px] font-semibold text-[#1E3A8A]">ID Konsul: {{ $notif['label'] }}</p>
+                                        <p class="mt-0.5 text-xs text-slate-500">
+                                            {{ $notif['jumlah'] }} pesan belum dibaca
+                                            · {{ $notif['waktu']->isToday() ? $notif['waktu']->format('H:i') : $notif['waktu']->format('d/m') }}
+                                        </p>
+                                    </div>
+                                    <span class="mt-1 inline-flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-[#1E3A8A] px-1 text-[10px] font-bold leading-none text-white">
+                                        {{ $notif['jumlah'] > 99 ? '99+' : $notif['jumlah'] }}
+                                    </span>
+                                </a>
+                            @endforeach
+                        @endif
+
+                        @if ($ringkasanRespon->isEmpty() && $ringkasanNotif->isEmpty())
                             <div class="flex items-start gap-3 px-4 py-3 hover:bg-slate-50">
                                 <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1E3A8A]/10 text-[#1E3A8A]">
                                     <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
@@ -171,10 +290,10 @@
                                     <p class="mt-0.5 text-xs text-slate-500">Aktivitas terbaru akan muncul di sini.</p>
                                 </div>
                             </div>
-                        @endforelse
+                        @endif
                     </div>
                     <div class="border-t border-slate-100 px-4 py-2.5 text-center">
-                        @if ($ringkasanNotif->isNotEmpty())
+                        @if ($ringkasanNotif->isNotEmpty() || $ringkasanRespon->isNotEmpty())
                             <a href="{{ $role === 'konsultan' ? route('konsultan.obrolan', ['daftar' => 1]) : route('audiens.konsultasi-saya') }}"
                                class="text-xs font-semibold text-[#1E3A8A] hover:underline">Lihat semua obrolan</a>
                         @else
@@ -306,3 +425,50 @@
         </div>
     </div>
 </nav>
+
+@if ($role !== 'admin')
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const versiAwal = @json($versiAktivitas);
+            let versiTerakhir = versiAwal;
+            let sedangMemeriksa = false;
+
+            // Polling ringan: bila status/alasan tolak konsultasi berubah,
+            // halaman dimuat ulang otomatis sehingga notifikasi dan isi
+            // obrolan (termasuk balasan otomatis konsultan) langsung tampil.
+            async function periksaAktivitas() {
+                if (document.hidden || sedangMemeriksa) return;
+
+                sedangMemeriksa = true;
+                try {
+                    const res = await fetch('{{ route('aktivitas-konsultasi.versi') }}', {
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                    });
+
+                    if (!res.ok) return;
+
+                    const data = await res.json();
+                    if (data && data.versi && data.versi !== versiTerakhir) {
+                        versiTerakhir = data.versi;
+                        window.location.reload();
+                    }
+                } catch (e) {
+                    /* silent: koneksi terputus sementara */
+                } finally {
+                    sedangMemeriksa = false;
+                }
+            }
+
+            setInterval(periksaAktivitas, 5000);
+
+            document.addEventListener('visibilitychange', function () {
+                if (!document.hidden) periksaAktivitas();
+            });
+        });
+    </script>
+    @endpush
+@endif

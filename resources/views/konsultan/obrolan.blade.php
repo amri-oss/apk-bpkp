@@ -66,8 +66,8 @@
                 inputCari.addEventListener('input', function () {
                     const kata = this.value.trim().toLowerCase();
                     daftar.querySelectorAll('.wa-chat-item').forEach(function (item) {
-                        const nama = (item.querySelector('.wa-chat-name')?.textContent || '').toLowerCase();
-                        item.style.display = nama.includes(kata) ? '' : 'none';
+                        const teks = (item.dataset.cari || item.querySelector('.wa-chat-name')?.textContent || '').toLowerCase();
+                        item.style.display = teks.includes(kata) ? '' : 'none';
                     });
                 });
             }
